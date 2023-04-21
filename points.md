@@ -15,7 +15,7 @@
 - [ ] Parse the json data to the datastructure
 - [ ] Use of loaded document and playable part keep track of spell slots
 - [ ] Works without crashing
-- [ ] Usefull GIT commits during 5 feeks
+- [ ] Usefull GIT commits during 5 weeks
 - [ ] Nice extra example: flowchart (miro), use of getopt() or provide URL
 
 ## explanation for the points 
