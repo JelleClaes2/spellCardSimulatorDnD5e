@@ -5,6 +5,18 @@
 int main(int argc , char* argv[]){
 
     enum bool{false,true};
+
+    struct annyKey{
+            char* name;
+            char* value;
+    };
+
+    struct damage_type {
+        char *index;
+        char *name;
+        char *url;
+    };
+
     struct spell{
         char* index;
         char* name;
@@ -26,16 +38,13 @@ int main(int argc , char* argv[]){
         char* attack_type;
         union damage{
             struct damage_at_character_level{
-                //TODO
+                struct annyKey* keyValues;
+                struct damage_type damageType;
             };
             struct damage_at_slot_level{
-                //TODO
+                struct annyKey* keyValues;
+                struct damage_type damageType;
             };
-        };
-        struct damage_type{
-            char* index;
-            char* name;
-            char* url;
         };
         struct school{
             char* index;
