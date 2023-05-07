@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 #define MAX_LIST_SIZE (100)
 
@@ -80,13 +81,44 @@ struct spell{
 
 int main(int argc , char* argv[]){
 
+    struct spell blur;
+
     FILE *filePointer = fopen("spells/blur.json","r");//Open blur.json TODO NEED TO CHECK ARG TO MAIN
     if (filePointer == NULL) // Check if file is succesfully opened
     {
         perror("File opening failed"); // Print error
         return -1;                     // Stop program
     }
+    char buffer[1024];    // Prepare a line buffer
+    char *parsing = NULL; // Prepare helper pointer for strsep
+    int counter = 0;      // Prepare helper counter for printing
+    char check[6] = "count";
+    while (!feof(filePointer)) // Keep reading file till EndOfFile is reached
+    {
+        if (fgets(buffer, sizeof(buffer), filePointer) == NULL) // Read one line (stops on newline or eof), will return NULL on eof or fail
+        {
+            fclose(filePointer);
+            break; // Stop reading
+        }
 
-    
+        parsing = buffer; // Point to buffer (reset)
+        char *token = strtok(&parsing, "\"");
+        while (token) // If token exists
+        {
+
+            token = strtok(&parsing, "\""); // Find next token
+            //printf("%s\n", buffer);
+            if (token != NULL) {
+                if (strcmp(token, "index") == 0) {
+                    char *index = strtok(&parsing[2], ",");
+                    blur.index = index;
+                    printf("index=%s",blur.index);
+                }
+            }
+
+        }
+    }
+
+
 
 }
