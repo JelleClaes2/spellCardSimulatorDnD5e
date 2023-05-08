@@ -81,9 +81,9 @@ struct spell{
 
 int main(int argc , char* argv[]){
 
-    struct spell blur;
+    struct spell sarced_flame;
 
-    FILE *filePointer = fopen("spells/blur.json","r");//Open blur.json TODO NEED TO CHECK ARG TO MAIN
+    FILE *filePointer = fopen("spells/sacred-flame.json","r");//Open blur.json TODO NEED TO CHECK ARG TO MAIN
     if (filePointer == NULL) // Check if file is succesfully opened
     {
         perror("File opening failed"); // Print error
@@ -103,21 +103,23 @@ int main(int argc , char* argv[]){
 
         parsing = buffer; // Point to buffer (reset)
         char *token = strtok(&parsing, "\"");
-        while (token) // If token exists
-        {
+        //while (token) // If token exists
+        //{
 
             token = strtok(&parsing, "\""); // Find next token
-            //printf("%s\n", buffer);
+            printf("buffer = %s\n", buffer);
             if (token != NULL) {
-                if (strcmp(token, "index") == 0) {
+
+                printf("token = %s\n",token);
+                if (strcmp(token, "index") == 0) { //TODO READ INDEX
+                    printf("READ INDEX\n");
                     char *index = strtok(&parsing[2], ",");
-                    blur.index = index;
-                    printf("index=%s",blur.index);
+                    sarced_flame.index = index;
+                    printf("index=%s",sarced_flame.index);
                 }
             }
-
         }
-    }
+    //}
 
 
 
