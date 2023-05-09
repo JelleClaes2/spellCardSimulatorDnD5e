@@ -4,6 +4,17 @@
 
 #define MAX_LIST_SIZE (100)
 
+char *strsep(char **stringp, const char *delim) {
+    char *rv = *stringp;
+    if (rv) {
+        *stringp += strcspn(*stringp, delim);
+        if (**stringp)
+            *(*stringp)++ = '\0';
+        else
+            *stringp = 0; }
+    return rv;
+}
+
 enum bool{false,true};
 
 struct anyKey{
@@ -38,19 +49,7 @@ union damage {
     struct damage_struct damage_at_slot_level;
 };
 
-struct school{
-    char* index;
-    char* name;
-    char* url;
-};
-
-struct classes{
-    char* index;
-    char* name;
-    char* url;
-};
-
-struct subclasses{
+struct resource{
     char* index;
     char* name;
     char* url;
@@ -74,9 +73,9 @@ struct spell{
     char* attack_type;
     enum damage_group damage_group;
     union damage damage;
-    struct school school;
-    struct classes classes[MAX_LIST_SIZE];
-    struct subclasses subclasses[MAX_LIST_SIZE];
+    struct resource school;
+    struct resource classes[MAX_LIST_SIZE];
+    struct resource subclasses[MAX_LIST_SIZE];
 };
 
 int main(int argc , char* argv[]){
@@ -102,24 +101,29 @@ int main(int argc , char* argv[]){
         }
 
         parsing = buffer; // Point to buffer (reset)
-        char *token = strtok(&parsing, "\"");
-        //while (token) // If token exists
-        //{
+        char *token = strsep(&parsing, "\"");
+        while (token) // If token exists
+        {
 
-            token = strtok(&parsing, "\""); // Find next token
+            token = strsep(&parsing, "\""); // Find next token
             printf("buffer = %s\n", buffer);
-            if (token != NULL) {
+                if (token != NULL) {
 
                 printf("token = %s\n",token);
-                if (strcmp(token, "index") == 0) { //TODO READ INDEX
-                    printf("READ INDEX\n");
-                    char *index = strtok(&parsing[2], ",");
+                if (strcmp(token, "index") == 0) { //TODO DYNAMIC JSON PARSER
+                    parsing+=2;
+                    char *index = strsep(&parsing, ",");
                     sarced_flame.index = index;
-                    printf("index=%s",sarced_flame.index);
+                    printf("index =%s\n",sarced_flame.index);
+                } else if(strcmp("name",token)==0){
+                    parsing+=2;
+                    char *name = strsep(&parsing, ",");
+                    sarced_flame.name = name;
+                    printf("name =%s\n",sarced_flame.name);
                 }
             }
         }
-    //}
+    }
 
 
 
