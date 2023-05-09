@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MAX_LIST_SIZE (100)
 
@@ -81,6 +82,11 @@ struct spell{
 int main(int argc , char* argv[]){
 
     struct spell sarced_flame;
+    enum damage_group damageGroup;
+
+    char *string;
+
+    uint8_t indexCount = 0;
 
     FILE *filePointer = fopen("spells/sacred-flame.json","r");//Open blur.json TODO NEED TO CHECK ARG TO MAIN
     if (filePointer == NULL) // Check if file is succesfully opened
@@ -109,18 +115,47 @@ int main(int argc , char* argv[]){
             printf("buffer = %s\n", buffer);
                 if (token != NULL) {
 
-                printf("token = %s\n",token);
+                printf("token = '%s'\n",token);
                 if (strcmp(token, "index") == 0) { //TODO DYNAMIC JSON PARSER
                     parsing+=2;
-                    char *index = strsep(&parsing, ",");
-                    sarced_flame.index = index;
-                    printf("index =%s\n",sarced_flame.index);
+                    token = strsep(&parsing, ",");
+                    string = (char *)calloc(strlen(token)+1, sizeof(char));
+                    strcpy(string,token);
+                    if(indexCount == 0){
+                        sarced_flame.index = string;
+                        printf("index =%s\n",sarced_flame.index);
+                        indexCount++;
+                    } else if(indexCount == 1){
+                        if(damageGroup == damage_at_character_level){ //TODO DOESNT WORK
+                            string = sarced_flame.damage.damage_at_character_level.damageType.index;
+                            printf("caracter damage index = %s\n",sarced_flame.damage.damage_at_character_level.damageType.index);
+                        } else if(damageGroup == damage_at_slot_level){
+                            string = sarced_flame.damage.damage_at_slot_level.damageType.index;
+                            printf("slot damage index = %s\n",sarced_flame.damage.damage_at_slot_level.damageType.index);
+                        }
+                        indexCount ++;
+                    }
+
                 } else if(strcmp("name",token)==0){
                     parsing+=2;
-                    char *name = strsep(&parsing, ",");
-                    sarced_flame.name = name;
+                    token = strsep(&parsing, ",");
+                    string = (char *)calloc(strlen(token)+1, sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.name = string;
                     printf("name =%s\n",sarced_flame.name);
-                }
+                }else if(strcmp("url",token)==0) {
+                    parsing += 2;
+                    printf("parsing= %s",parsing);
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token) + 1, sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.url = string;
+                    printf("url = %s\n", sarced_flame.url);
+                }else if (strcmp("damage_at_character_level",token)==0){
+                    damageGroup = damage_at_character_level;
+                } else if(strcmp("damage_at_slot_level",token)==0){
+                    damageGroup = damage_at_slot_level;
+                } 
             }
         }
     }
