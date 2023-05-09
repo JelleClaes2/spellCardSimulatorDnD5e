@@ -112,11 +112,11 @@ int main(int argc , char* argv[]){
         {
 
             token = strsep(&parsing, "\""); // Find next token
-            printf("buffer = %s\n", buffer);
+            //printf("buffer = %s\n", buffer);
                 if (token != NULL) {
 
-                printf("token = '%s'\n",token);
-                if (strcmp(token, "index") == 0) { //TODO DYNAMIC JSON PARSER
+                //printf("token = '%s'\n",token);
+                if (strcmp(token, "index") == 0) {
                     parsing+=2;
                     token = strsep(&parsing, ",");
                     string = (char *)calloc(strlen(token)+1, sizeof(char));
@@ -125,16 +125,16 @@ int main(int argc , char* argv[]){
                         sarced_flame.index = string;
                         printf("index =%s\n",sarced_flame.index);
                         indexCount++;
-                    } else if(indexCount == 1){
-                        if(damageGroup == damage_at_character_level){ //TODO DOESNT WORK
+                    } /*else if(indexCount == 1){
+                        if(damageGroup == damage_at_character_level){
                             string = sarced_flame.damage.damage_at_character_level.damageType.index;
-                            printf("caracter damage index = %s\n",sarced_flame.damage.damage_at_character_level.damageType.index);
+                            printf("character damage index = %s\n",sarced_flame.damage.damage_at_character_level.damageType.index);
                         } else if(damageGroup == damage_at_slot_level){
                             string = sarced_flame.damage.damage_at_slot_level.damageType.index;
                             printf("slot damage index = %s\n",sarced_flame.damage.damage_at_slot_level.damageType.index);
                         }
                         indexCount ++;
-                    }
+                    }*/
 
                 } else if(strcmp("name",token)==0){
                     parsing+=2;
@@ -145,17 +145,169 @@ int main(int argc , char* argv[]){
                     printf("name =%s\n",sarced_flame.name);
                 }else if(strcmp("url",token)==0) {
                     parsing += 2;
-                    printf("parsing= %s",parsing);
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token) + 1, sizeof(char));
                     strcpy(string,token);
                     sarced_flame.url = string;
                     printf("url = %s\n", sarced_flame.url);
-                }else if (strcmp("damage_at_character_level",token)==0){
+                } else if (strcmp("desc",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.desc = string;
+                } else if(strcmp("higher_level",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.higher_level = string;
+                } else if(strcmp("range",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.range = string;
+                } else if(strcmp("components",token)==0){
+                    int i = 0;
+                    while (strcmp("]",token)!=0){
+                        token = strsep(&parsing, "\"");
+                        parsing += 2;
+                        token = strsep(&parsing, ",");
+                        string = (char *) calloc(strlen(token)+1,sizeof(char));
+                        strcpy(string,token);
+                        if(strcmp("V",token)==0){
+                            sarced_flame.components[i] = V;
+                        }else if(strcmp("S",token)==0){
+                            sarced_flame.components[i] = S;
+                        }else if(strcmp("M",token)==0){
+                            sarced_flame.components[i] = M;
+                        }
+                        i++;
+                    }
+                } else if(strcmp("material",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.material = string;
+                } else if(strcmp("area_of_effect",token)==0){
+                    while (strcmp("}",token)!=0) {
+                        token = strsep(&parsing, "\"");
+                        if (strcmp("type", token) == 0) {
+                            parsing += 2;
+                            token = strsep(&parsing, ",");
+                            string = (char *) calloc(strlen(token) + 1, sizeof(char));
+                            strcpy(string, token);
+                            if (strcmp("sphere", token) == 0) {
+                                sarced_flame.area_of_effect.type = sphere;
+                            } else if (strcmp("cone", token) == 0) {
+                                sarced_flame.area_of_effect.type = cone;
+                            } else if (strcmp("cylinder", token) == 0) {
+                                sarced_flame.area_of_effect.type = cylinder;
+                            } else if (strcmp("line", token) == 0) {
+                                sarced_flame.area_of_effect.type = line;
+                            } else if (strcmp("cube", token) == 0) {
+                                sarced_flame.area_of_effect.type = cube;
+                            }
+                        } else if (strcmp("size", token) == 0) {
+                                sarced_flame.area_of_effect.size = atoi(string);
+                        }
+                    }
+                } else if(strcmp("ritual",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    if(strcmp("true",token)==0){
+                        sarced_flame.ritual = true;
+                    } else if(strcmp("false",token)==0){
+                        sarced_flame.ritual = false;
+                    }
+                } else if(strcmp("duration",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.duration = string;
+                } else if(strcmp("concentration",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    if(strcmp("true",token)==0){
+                        sarced_flame.concentration = true;
+                    } else if(strcmp("false",token)==0){
+                        sarced_flame.concentration = false;
+                    }
+                } else if(strcmp("casting_time",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.casting_time = string;
+                } else if(strcmp("level",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.level = atoi(string);
+                } else if(strcmp("attack_type",token)==0){
+                    parsing += 2;
+                    token = strsep(&parsing, ",");
+                    string = (char *) calloc(strlen(token)+1,sizeof(char));
+                    strcpy(string,token);
+                    sarced_flame.attack_type = string;
+                } else if (strcmp("damage_at_character_level",token)==0){//TODO FILL IN THIS PART OF STRUCT
                     damageGroup = damage_at_character_level;
                 } else if(strcmp("damage_at_slot_level",token)==0){
                     damageGroup = damage_at_slot_level;
-                } 
+                } else if(strcmp("school",token)==0){
+                    while (strcmp("}",token)!=0) {
+                        token = strsep(&parsing, "\"");
+                        parsing += 2;
+                        token = strsep(&parsing, ",");
+                        string = (char *) calloc(strlen(token)+1,sizeof(char));
+                        strcpy(string,token);
+                        if(strcmp("index",token)==0){
+                            sarced_flame.school.index = string;
+                        } else if(strcmp("name",token)==0){
+                            sarced_flame.school.name = string;
+                        } else if(strcmp("url",token)==0){
+                            sarced_flame.school.url = string;
+                        }
+                    }
+                } else if(strcmp("classes",token)==0){
+                    while (strcmp("]",token)!=0){
+                        token = strsep(&parsing, "\"");
+                        parsing += 2;
+                        token = strsep(&parsing, ",");
+                        string = (char *) calloc(strlen(token)+1,sizeof(char));
+                        strcpy(string,token);
+                        if(strcmp("index",token)==0){
+                            sarced_flame.classes->index = string;
+                        } else if(strcmp("name",token)==0){
+                            sarced_flame.classes->name = string;
+                        } else if(strcmp("url",token)==0){
+                            sarced_flame.classes->url = string;
+                        }
+                    }
+                }else if(strcmp("subclasses",token)==0){
+                    while (strcmp("]",token)!=0){
+                        token = strsep(&parsing, "\"");
+                        parsing += 2;
+                        token = strsep(&parsing, ",");
+                        string = (char *) calloc(strlen(token)+1,sizeof(char));
+                        strcpy(string,token);
+                        if(strcmp("index",token)==0){
+                            sarced_flame.subclasses->index = string;
+                        } else if(strcmp("name",token)==0){
+                            sarced_flame.subclasses->name = string;
+                        } else if(strcmp("url",token)==0){
+                            sarced_flame.subclasses->url = string;
+                        }
+                    }
+                }
             }
         }
     }
