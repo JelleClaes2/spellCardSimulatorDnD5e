@@ -86,16 +86,49 @@ struct spell jsonParser(FILE* filePointer);
 
 int main(int argc , char* argv[]){
 
+    uint8_t characterLevel = 0;
+    char* nameHistoryFile;
+    uint8_t amountOfSpellSlots[9]; //highest slot level == 9 and never higher than 9 slots of a certain spell
+
+    for(int i=0;i<argc;i++){
+        if(argv[i][0] == '-'){
+            if(argv[i][1] == 's'){
+                amountOfSpellSlots[0] = atoi(argv[i+1]);
+                amountOfSpellSlots[1] = atoi(argv[i+2]);
+                amountOfSpellSlots[2] = atoi(argv[i+3]);
+                amountOfSpellSlots[3] = atoi(argv[i+4]);
+                amountOfSpellSlots[4] = atoi(argv[i+5]);
+                amountOfSpellSlots[5] = atoi(argv[i+6]);
+                amountOfSpellSlots[6] = atoi(argv[i+7]);
+                amountOfSpellSlots[7] = atoi(argv[i+8]);
+                amountOfSpellSlots[8] = atoi(argv[i+9]);
+            } else if(argv[i][1] == 'l'){
+                characterLevel = atoi(argv[i+1]);
+            } else if(argv[i][1] == 'h'){
+                nameHistoryFile = argv[i+1];
+            }
+        }
+    }
+
+    FILE* filePointerHistory = fopen(nameHistoryFile,"w");
+    if(filePointerHistory == NULL){
+        perror("File opening failed");
+        return -1;
+    }
+
     struct spell sacred_flame;
 
-    FILE *filePointer = fopen("spells/sacred-flame.json","r");//Open blur.json TODO NEED TO CHECK ARG TO MAIN
-    if (filePointer == NULL) // Check if file is succesfully opened
+    FILE *filePointerSpell = fopen("spells/sacred-flame.json","r");//Open blur.json TODO NEED TO CHECK ARG TO MAIN
+    if (filePointerSpell == NULL) // Check if file is succesfully opened
     {
         perror("File opening failed"); // Print error
         return -1;                     // Stop program
     }
-    sacred_flame = jsonParser(filePointer);
+    sacred_flame = jsonParser(filePointerSpell);
 
+    fclose(filePointerSpell);
+
+    fclose(filePointerHistory);
     return 0;
 }
 
