@@ -172,7 +172,7 @@ void jsonParser(FILE* filePointer, struct spell* spell){
             //printf("buffer = %s\n", buffer);
             if (token != NULL) {
                 //TODO DELETE INDEX COUNTER
-                //printf("token = '%s'\n",token);
+                printf("token = '%s'\n",token);
                 if (strcmp(token, "index") == 0) {
                     parsing+=3;
                     token = strsep(&parsing, "\"");
@@ -207,14 +207,27 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                     strcpy(string,token);
                     spell->url = string;
                     printf("url = %s\n", spell->url);
-                } else if (strcmp("desc",token)==0){ //TODO DOESNT WORK
-                    parsing += 3;
-                    token = strsep(&parsing, "\",");
-                    printf("token = %s\n",token);
+                } else if (strcmp("desc",token)==0){ //TODO SAVE CORRECTLY AND MAKE FUNCTION
+                    fgets(buffer, sizeof(buffer), filePointer);
+                    parsing=buffer;
+                    strsep(&parsing, "\"");
+                    token = strsep(&parsing, "\"");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
+                    fgets(buffer, sizeof(buffer), filePointer);
+                    parsing=buffer;
+                    while (strchr(buffer,']')== NULL) {
+                        printf ("buffer %s\n",buffer);
+                        strsep(&parsing, "\"");
+                        token = strsep(&parsing, "\"");
+                        printf ("next token %s\n", token);
+                        fgets(buffer, sizeof(buffer), filePointer);
+                        printf ("buffer %s\n",buffer);
+                    }
+
                     spell->desc = string;
                     printf("desc =%s\n",spell->desc);
+
                 } else if(strcmp("higher_level",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
