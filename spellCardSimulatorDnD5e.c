@@ -63,6 +63,7 @@ struct spell{
     char* desc;
     char* higher_level;
     char* range;
+    uint8_t componentsCounter;
     enum components components[MAX_LIST_SIZE];
     char* material;
     struct area_of_effect area_of_effect;
@@ -75,25 +76,37 @@ struct spell{
     enum damage_group damage_group;
     union damage damage;
     struct resource school;
+    uint8_t classesCounter;
     struct resource classes[MAX_LIST_SIZE];
+    uint8_t subclassesCounter;
     struct resource subclasses[MAX_LIST_SIZE];
 };
 
+struct spell jsonParser(FILE* filePointer);
+
 int main(int argc , char* argv[]){
 
-    struct spell sarced_flame;
+    struct spell sacred_flame;
+
+    FILE *filePointer = fopen("spells/sacred-flame.json","r");//Open blur.json TODO NEED TO CHECK ARG TO MAIN
+    if (filePointer == NULL) // Check if file is succesfully opened
+    {
+        perror("File opening failed"); // Print error
+        return -1;                     // Stop program
+    }
+    sacred_flame = jsonParser(filePointer);
+
+    return 0;
+}
+
+struct spell jsonParser(FILE* filePointer){
+    struct spell spell;
     enum damage_group damageGroup;
 
     char *string;
 
     uint8_t indexCount = 0;
 
-    FILE *filePointer = fopen("spells/sacred_flame_test.json","r");//Open blur.json TODO NEED TO CHECK ARG TO MAIN
-    if (filePointer == NULL) // Check if file is succesfully opened
-    {
-        perror("File opening failed"); // Print error
-        return -1;                     // Stop program
-    }
     char buffer[1024];    // Prepare a line buffer
     char *parsing = NULL; // Prepare helper pointer for strsep
     int counter = 0;      // Prepare helper counter for printing
@@ -113,8 +126,8 @@ int main(int argc , char* argv[]){
 
             token = strsep(&parsing, "\""); // Find next token
             //printf("buffer = %s\n", buffer);
-                if (token != NULL) {
-
+            if (token != NULL) {
+                //TODO DELETE INDEX COUNTER
                 //printf("token = '%s'\n",token);
                 if (strcmp(token, "index") == 0) {
                     parsing+=2;
@@ -122,16 +135,16 @@ int main(int argc , char* argv[]){
                     string = (char *)calloc(strlen(token)+1, sizeof(char));
                     strcpy(string,token);
                     if(indexCount == 0){
-                        sarced_flame.index = string;
-                        printf("index =%s\n",sarced_flame.index);
+                        spell.index = string;
+                        printf("index =%s\n",spell.index);
                         indexCount++;
                     } /*else if(indexCount == 1){
                         if(damageGroup == damage_at_character_level){
-                            string = sarced_flame.damage.damage_at_character_level.damageType.index;
-                            printf("character damage index = %s\n",sarced_flame.damage.damage_at_character_level.damageType.index);
+                            string = spell.damage.damage_at_character_level.damageType.index;
+                            printf("character damage index = %s\n",spell.damage.damage_at_character_level.damageType.index);
                         } else if(damageGroup == damage_at_slot_level){
-                            string = sarced_flame.damage.damage_at_slot_level.damageType.index;
-                            printf("slot damage index = %s\n",sarced_flame.damage.damage_at_slot_level.damageType.index);
+                            string = spell.damage.damage_at_slot_level.damageType.index;
+                            printf("slot damage index = %s\n",spell.damage.damage_at_slot_level.damageType.index);
                         }
                         indexCount ++;
                     }*/
@@ -141,37 +154,37 @@ int main(int argc , char* argv[]){
                     token = strsep(&parsing, ",");
                     string = (char *)calloc(strlen(token)+1, sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.name = string;
-                    printf("name =%s\n",sarced_flame.name);
+                    spell.name = string;
+                    printf("name =%s\n",spell.name);
                 }else if(strcmp("url",token)==0) {
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token) + 1, sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.url = string;
-                    printf("url = %s\n", sarced_flame.url);
-                } else if (strcmp("desc",token)==0){ //TODO DOESNT WORK
+                    spell.url = string;
+                    printf("url = %s\n", spell.url);
+                } /*else if (strcmp("desc",token)==0){ //TODO DOESNT WORK
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.desc = string;
-                    printf("desc =%s\n",sarced_flame.desc);
-                } else if(strcmp("higher_level",token)==0){
+                    spell.desc = string;
+                    printf("desc =%s\n",spell.desc);
+                } */else if(strcmp("higher_level",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.higher_level = string;
-                    printf("Higer level =%s\n",sarced_flame.higher_level);
+                    spell.higher_level = string;
+                    printf("Higher level =%s\n",spell.higher_level);
                 } else if(strcmp("range",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.range = string;
-                    printf("range =%s\n",sarced_flame.range);
-                } else if(strcmp("components",token)==0){ //TODO DOESNT WORK
+                    spell.range = string;
+                    printf("range =%s\n",spell.range);
+                } /*else if(strcmp("components",token)==0){ //TODO DOESNT WORK
                     int i = 0;
                     while (strcmp("]",token)!=0){
                         token = strsep(&parsing, "\"");
@@ -180,24 +193,24 @@ int main(int argc , char* argv[]){
                         string = (char *) calloc(strlen(token)+1,sizeof(char));
                         strcpy(string,token);
                         if(strcmp("V",token)==0){
-                            sarced_flame.components[i] = V;
+                            spell.components[i] = V;
                         }else if(strcmp("S",token)==0){
-                            sarced_flame.components[i] = S;
+                            spell.components[i] = S;
                         }else if(strcmp("M",token)==0){
-                            sarced_flame.components[i] = M;
+                            spell.components[i] = M;
                         }
                         i++;
                     }
                     for ( int j=0;j<i;j++){
-                        printf("component[%d] = %s",j,sarced_flame.components);
+                        printf("component[%d] = %s",j,spell.components);
                     }
-                } else if(strcmp("material",token)==0){
+                }*/ else if(strcmp("material",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.material = string;
-                    printf("material =%s\n",sarced_flame.material);
+                    spell.material = string;
+                    printf("material =%s\n",spell.material);
                 } else if(strcmp("area_of_effect",token)==0){
                     while (strcmp("}",token)!=0) {
                         token = strsep(&parsing, "\"");
@@ -207,20 +220,20 @@ int main(int argc , char* argv[]){
                             string = (char *) calloc(strlen(token) + 1, sizeof(char));
                             strcpy(string, token);
                             if (strcmp("sphere", token) == 0) {
-                                sarced_flame.area_of_effect.type = sphere;
+                                spell.area_of_effect.type = sphere;
                             } else if (strcmp("cone", token) == 0) {
-                                sarced_flame.area_of_effect.type = cone;
+                                spell.area_of_effect.type = cone;
                             } else if (strcmp("cylinder", token) == 0) {
-                                sarced_flame.area_of_effect.type = cylinder;
+                                spell.area_of_effect.type = cylinder;
                             } else if (strcmp("line", token) == 0) {
-                                sarced_flame.area_of_effect.type = line;
+                                spell.area_of_effect.type = line;
                             } else if (strcmp("cube", token) == 0) {
-                                sarced_flame.area_of_effect.type = cube;
+                                spell.area_of_effect.type = cube;
                             }
-                            printf("area_of_effect_type =%s\n",sarced_flame.area_of_effect.type);
+                            printf("area_of_effect_type =%s\n",spell.area_of_effect.type);
                         } else if (strcmp("size", token) == 0) {
-                                sarced_flame.area_of_effect.size = atoi(string);
-                            printf("area_of_effect_size = %d\n",sarced_flame.area_of_effect.size);
+                            spell.area_of_effect.size = atoi(string);
+                            printf("area_of_effect_size = %d\n",spell.area_of_effect.size);
                         }
                     }
                 } else if(strcmp("ritual",token)==0){
@@ -229,55 +242,55 @@ int main(int argc , char* argv[]){
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
                     if(strcmp("true",token)==0){
-                        sarced_flame.ritual = true;
+                        spell.ritual = true;
                     } else if(strcmp("false",token)==0){
-                        sarced_flame.ritual = false;
+                        spell.ritual = false;
                     }
-                    printf("ritual =%s\n",sarced_flame.ritual);
+                    printf("ritual =%s\n",spell.ritual);
                 } else if(strcmp("duration",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.duration = string;
-                    printf("duration =%s\n",sarced_flame.duration);
+                    spell.duration = string;
+                    printf("duration =%s\n",spell.duration);
                 } else if(strcmp("concentration",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
                     if(strcmp("true",token)==0){
-                        sarced_flame.concentration = true;
+                        spell.concentration = true;
                     } else if(strcmp("false",token)==0){
-                        sarced_flame.concentration = false;
+                        spell.concentration = false;
                     }
-                    printf("concentration =%s\n",sarced_flame.concentration);
+                    printf("concentration =%s\n",spell.concentration);
                 } else if(strcmp("casting_time",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.casting_time = string;
-                    printf("casting_time =%s\n",sarced_flame.casting_time);
+                    spell.casting_time = string;
+                    printf("casting_time =%s\n",spell.casting_time);
                 } else if(strcmp("level",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.level = atoi(string);
-                    printf("level =%d\n",sarced_flame.level);
+                    spell.level = atoi(string);
+                    printf("level =%d\n",spell.level);
                 } else if(strcmp("attack_type",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
-                    sarced_flame.attack_type = string;
-                    printf("attack_type =%s\n",sarced_flame.attack_type);
+                    spell.attack_type = string;
+                    printf("attack_type =%s\n",spell.attack_type);
                 } else if (strcmp("damage_at_character_level",token)==0){//TODO FILL IN THIS PART OF STRUCT
                     damageGroup = damage_at_character_level;
                 } else if(strcmp("damage_at_slot_level",token)==0){
                     damageGroup = damage_at_slot_level;
-                } else if(strcmp("school",token)==0){//TODO DOESNT WORK
+                } /*else if(strcmp("school",token)==0){//TODO DOESNT WORK
                     while (strcmp("}",token)!=0) {
                         token = strsep(&parsing, "\"");
                         parsing += 2;
@@ -285,17 +298,43 @@ int main(int argc , char* argv[]){
                         string = (char *) calloc(strlen(token)+1,sizeof(char));
                         strcpy(string,token);
                         if(strcmp("index",token)==0){
-                            sarced_flame.school.index = string;
-                            printf("school index =%s\n",sarced_flame.school.index);
+                            spell.school.index = string;
+                            printf("school index =%s\n",spell.school.index);
                         } else if(strcmp("name",token)==0){
-                            sarced_flame.school.name = string;
-                            printf("school name =%s\n",sarced_flame.school.name);
+                            spell.school.name = string;
+                            printf("school name =%s\n",spell.school.name);
                         } else if(strcmp("url",token)==0){
-                            sarced_flame.school.url = string;
-                            printf("school url =%s\n",sarced_flame.school.url);
+                            spell.school.url = string;
+                            printf("school url =%s\n",spell.school.url);
                         }
                     }
-                } else if(strcmp("classes",token)==0){ //TODO DOESNT WORK
+                }*//* else if(strcmp("classes",token)==0){ //TODO DOESNT WORK
+                    uint8_t classesCounter = 0;
+                    while (1){
+                        token = strsep(&parsing, "\"");
+                        if(strcmp("]",token)!=0)//find
+                        {
+                            break;
+                        }
+                        char* key_token = strsep(&parsing, "\"");
+                        parsing += 2;
+                        token = strsep(&parsing, "\"");
+                        //token = strsep(&parsing, ",");
+                        string = (char *) calloc(strlen(token)+1,sizeof(char));
+                        strcpy(string,token);
+                        if(strcmp("index",key_token)==0){
+                            strcpy(string,token);
+                            spell.classes->index = string;
+                            printf("classes index =%s\n",spell.classes->index);
+                        } else if(strcmp("name",key_token)==0){
+                            spell.classes->name = string;
+                            printf("classes name =%s\n",spell.classes->name);
+                        } else if(strcmp("url",key_token)==0){
+                            spell.classes->url = string;
+                            printf("classes url =%s\n",spell.classes->url);
+                        }
+                    }
+                } *//*else if(strcmp("subclasses",token)==0){ //TODO DOESNT WORK
                     while (strcmp("]",token)!=0){
                         token = strsep(&parsing, "\"");
                         parsing += 2;
@@ -303,39 +342,18 @@ int main(int argc , char* argv[]){
                         string = (char *) calloc(strlen(token)+1,sizeof(char));
                         strcpy(string,token);
                         if(strcmp("index",token)==0){
-                            sarced_flame.classes->index = string;
-                            printf("classes index =%s\n",sarced_flame.classes->index);
+                            spell.subclasses->index = string;
+                            printf("subclasses index =%s\n",spell.subclasses->index);
                         } else if(strcmp("name",token)==0){
-                            sarced_flame.classes->name = string;
-                            printf("classes name =%s\n",sarced_flame.classes->name);
+                            spell.subclasses->name = string;
+                            printf("subclasses name =%s\n",spell.subclasses->name);
                         } else if(strcmp("url",token)==0){
-                            sarced_flame.classes->url = string;
-                            printf("classes url =%s\n",sarced_flame.classes->url);
+                            spell.subclasses->url = string;
+                            printf("subclasses url =%s\n",spell.subclasses->url);
                         }
-                    }
-                }else if(strcmp("subclasses",token)==0){ //TODO DOESNT WORK
-                    while (strcmp("]",token)!=0){
-                        token = strsep(&parsing, "\"");
-                        parsing += 2;
-                        token = strsep(&parsing, ",");
-                        string = (char *) calloc(strlen(token)+1,sizeof(char));
-                        strcpy(string,token);
-                        if(strcmp("index",token)==0){
-                            sarced_flame.subclasses->index = string;
-                            printf("subclasses index =%s\n",sarced_flame.subclasses->index);
-                        } else if(strcmp("name",token)==0){
-                            sarced_flame.subclasses->name = string;
-                            printf("subclasses name =%s\n",sarced_flame.subclasses->name);
-                        } else if(strcmp("url",token)==0){
-                            sarced_flame.subclasses->url = string;
-                            printf("subclasses url =%s\n",sarced_flame.subclasses->url);
-                        }
-                    }
+                    }*/
                 }
             }
         }
+    return spell;
     }
-
-
-
-}
