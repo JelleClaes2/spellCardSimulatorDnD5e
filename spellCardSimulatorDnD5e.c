@@ -20,7 +20,7 @@ char *strsep(char **stringp, const char *delim) {
 enum bool{false,true};
 
 struct anyKey{
-    char* name;
+    uint8_t level;
     char* value;
 };
 
@@ -45,7 +45,7 @@ enum damage_group{damage_at_character_level,damage_at_slot_level};
 
 struct damage {
     enum damage_group damage_group;
-    struct annyKey *keyValues;
+    struct anyKey *keyValues;
 };
 
 struct resource{
@@ -85,6 +85,7 @@ void jsonParser(FILE* filePointer, struct spell* spell);
 uint8_t parseArray (FILE* filePointer, char*** element);
 uint8_t parseEnumComponentsArray (FILE* filePointer, enum components** element);
 void parseNameUrlIndex (FILE* filePointer, char** name, char** url, char** index);
+uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey);
 
 int main(int argc , char* argv[]){
 
@@ -234,6 +235,40 @@ void parseNameUrlIndex (FILE* filePointer, char** name, char** url, char** index
             }
         }
     }
+}
+
+uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey) {
+    char buffer[1024];    // Prepare a line buffer
+    char *parsing = NULL; // Prepare helper pointer for strsep
+    char *string;
+    char *token;
+
+    (*anyKey) = ( struct anyKey*) calloc(1,sizeof(struct anyKey*)); // only allocate 1 char pointer place
+    fgets(buffer, sizeof(buffer), filePointer);
+    parsing=buffer;
+    uint8_t count=0;
+
+    while (strchr(buffer,'}')== NULL) {
+        count++;
+        if (count != 1) {
+            (*anyKey) = (struct anyKey*) realloc(*anyKey, count * sizeof(struct anyKey*)); // add one more entry
+        }
+        strsep(&parsing, "\"");
+        token = strsep(&parsing, "\"");
+        (*anyKey)[count-1].level = atoi(token);
+
+        strsep(&parsing, "\"");
+        token = strsep(&parsing, "\"");
+
+        string = (char *) calloc(strlen(token) + 1, sizeof(char));
+        strcpy(string, token);
+
+
+        (*anyKey)[count-1].value = string;
+        fgets(buffer, sizeof(buffer), filePointer);
+        parsing = buffer;
+    }
+    return count;
 }
 
 void jsonParser(FILE* filePointer, struct spell* spell){
@@ -386,21 +421,37 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                     spell->attack_type = string;
                     printf("attack_type =%s\n",spell->attack_type);
                 } else if (strcmp("damage",token)==0){
-                    fgets(buffer, sizeof(buffer), filePointer);
-                    parsing = buffer; // Point to buffer (reset)
-                    strsep(&parsing, "\"");
-                    token = strsep(&parsing, "\"");
-                    printf("damage token %s\n", token);
-                    if (strcmp("damage_at_character_level",token)==0){//TODO FILL IN THIS PART OF STRUCT
-                        damageGroup = damage_at_character_level;
-                    } else if(strcmp("damage_at_slot_level",token)==0) {
-                        damageGroup = damage_at_slot_level;
-                    } else if(strcmp("damage_type",token)==0) {
-                        parseNameUrlIndex(filePointer,&(spell->damage_type.name), &(spell->damage_type.url), &(spell->damage_type.index));
-                        printf("damage type name =%s\n",spell->damage_type.name);
-                        printf("damage type url =%s\n",spell->damage_type.url);
-                        printf("damage type index =%s\n",spell->damage_type.index);
+                    while(strchr(buffer,'}')==NULL){
+                        fgets(buffer, sizeof(buffer), filePointer);
+                        parsing = buffer; // Point to buffer (reset)
+                        strsep(&parsing, "\"");
+                        token = strsep(&parsing, "\"");
+                        printf("damage token %s\n", token);
+                        if (strcmp("damage_at_character_level",token)==0){//TODO FILL IN THIS PART OF STRUCT AND FIX KEY VAL
+                            damageGroup = damage_at_character_level;
+                            uint8_t count=parseAnyKeyArray(filePointer,&(spell->damage.keyValues));
+                            printf("size %d\n", count);
+                            for (int i=0; i<count; i++) {
+                                printf("key val [%d] =%d , %s\n",i, spell->damage.keyValues[i].level,spell->damage.keyValues[i].value);
+                            }
+                        } else if(strcmp("damage_at_slot_level",token)==0) {
+                            printf("here am I\n");
+                            damageGroup = damage_at_slot_level;
+                            uint8_t count=parseAnyKeyArray(filePointer,&(spell->damage.keyValues));
+                            printf("size %d\n", count);
+                            for (int i=0; i<count; i++) {
+                                printf("key val [%d] =%d , %s\n",i, spell->damage.keyValues[i].level,spell->damage.keyValues[i].value);
+                            }
+                        } else if(strcmp("damage_type",token)==0) {
+                            parseNameUrlIndex(filePointer,&(spell->damage_type.name), &(spell->damage_type.url), &(spell->damage_type.index));
+                            printf("damage type name =%s\n",spell->damage_type.name);
+                            printf("damage type url =%s\n",spell->damage_type.url);
+                            printf("damage type index =%s\n",spell->damage_type.index);
+                            fgets(buffer, sizeof(buffer), filePointer);
+                            //fgets(buffer, sizeof(buffer), filePointer);
+                        }
                     }
+
                 } else if(strcmp("school",token)==0){//TODO DOESNT WORK
                     parseNameUrlIndex(filePointer,&(spell->school.name), &(spell->school.url), &(spell->school.index));
                     printf("school name =%s\n",spell->school.name);
