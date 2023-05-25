@@ -42,14 +42,10 @@ struct damage_type {
 
 enum damage_group{damage_at_character_level,damage_at_slot_level};
 
-struct damage_struct {
-    struct annyKey *keyValues;
-    struct damage_type damageType;
-};
 
-union damage {
-    struct damage_struct damage_at_character_level;
-    struct damage_struct damage_at_slot_level;
+struct damage {
+    enum damage_group damage_group;
+    struct annyKey *keyValues;
 };
 
 struct resource{
@@ -75,8 +71,9 @@ struct spell{
     char* casting_time;
     int level;
     char* attack_type;
-    enum damage_group damage_group;
-    union damage damage;
+
+    struct damage damage;
+    struct damage_type damage_type;
     struct resource school;
     uint8_t classesCounter;
     struct resource* classes;
@@ -85,6 +82,8 @@ struct spell{
 };
 
 void jsonParser(FILE* filePointer, struct spell* spell);
+uint8_t parseArray (FILE* filePointer, char*** element);
+uint8_t parseEnumComponentsArray (FILE* filePointer, enum components** element);
 
 int main(int argc , char* argv[]){
 
@@ -142,6 +141,96 @@ int main(int argc , char* argv[]){
 
     fclose(filePointerHistory);
     return 0;
+}
+
+uint8_t parseArray (FILE* filePointer, char*** element) {
+    char buffer[1024];    // Prepare a line buffer
+    char *parsing = NULL; // Prepare helper pointer for strsep
+    char *string;
+    char *token;
+
+    (*element) = (char **) calloc(1,sizeof(char**)); // only allocate 1 char pointer place
+    fgets(buffer, sizeof(buffer), filePointer);
+    parsing=buffer;
+    uint8_t count=0;
+
+    while (strchr(buffer,']')== NULL) {
+        count++;
+        strsep(&parsing, "\"");
+        token = strsep(&parsing, "\"");
+
+        string = (char *) calloc(strlen(token) + 1, sizeof(char));
+        strcpy(string, token);
+        if (count != 1) {
+            (*element) = (char **) realloc(*element, count * sizeof(char **)); // add one more entry
+        }
+        (*element)[count-1] = string;
+        fgets(buffer, sizeof(buffer), filePointer);
+        parsing = buffer;
+    }
+    return count;
+}
+
+uint8_t parseEnumComponentsArray (FILE* filePointer, enum components** element) {
+    char buffer[1024];    // Prepare a line buffer
+    char *parsing = NULL; // Prepare helper pointer for strsep
+    char *string;
+    char *token;
+
+    (*element) = (enum components *) calloc(1,sizeof(enum components*)); // only allocate 1 char pointer place
+    fgets(buffer, sizeof(buffer), filePointer);
+    parsing=buffer;
+    uint8_t count=0;
+
+    while (strchr(buffer,']')== NULL) {
+        count++;
+        strsep(&parsing, "\"");
+        token = strsep(&parsing, "\"");
+        printf("comp token %s\n",token);
+
+        if (count != 1) {
+            (*element) = (enum components *) realloc(*element, count * sizeof(enum components *)); // add one more entry
+        }
+        if(strcmp(token, "V")==0){
+            (*element)[count-1] = V;
+        }else if(strcmp(token, "S")==0){
+            (*element)[count-1] = S;
+        }else if(strcmp(token, "M")==0){
+            (*element)[count-1] = M;
+        }
+
+        fgets(buffer, sizeof(buffer), filePointer);
+        parsing = buffer;
+    }
+    return count;
+}
+
+void parseNameUrlIndex (FILE* filePointer, char** name, char** url, char** index) {
+    char buffer[1024];    // Prepare a line buffer
+    char *parsing = NULL; // Prepare helper pointer for strsep
+    char *string;
+    char *token;
+
+    (*element) = (char **) calloc(1,sizeof(char**)); // only allocate 1 char pointer place
+    fgets(buffer, sizeof(buffer), filePointer);
+    parsing=buffer;
+    uint8_t count=0;
+
+    while (strchr(buffer,']')== NULL) {
+        count++;
+        strsep(&parsing, "\"");
+        token = strsep(&parsing, "\"");
+
+        string = (char *) calloc(strlen(token) + 1, sizeof(char));
+        strcpy(string, token);
+        if (count != 1) {
+            (*element) = (char **) realloc(*element, count * sizeof(char **)); // add one more entry
+        }
+        (*element)[count-1] = string;
+        fgets(buffer, sizeof(buffer), filePointer);
+        parsing = buffer;
+    }
+    return count;
 }
 
 void jsonParser(FILE* filePointer, struct spell* spell){
@@ -207,64 +296,34 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                     strcpy(string,token);
                     spell->url = string;
                     printf("url = %s\n", spell->url);
-                } else if (strcmp("desc",token)==0){ //TODO SAVE CORRECTLY AND MAKE FUNCTION
-                    fgets(buffer, sizeof(buffer), filePointer);
-                    parsing=buffer;
-                    strsep(&parsing, "\"");
-                    token = strsep(&parsing, "\"");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
-                    fgets(buffer, sizeof(buffer), filePointer);
-                    parsing=buffer;
-                    while (strchr(buffer,']')== NULL) {
-                        printf ("buffer %s\n",buffer);
-                        strsep(&parsing, "\"");
-                        token = strsep(&parsing, "\"");
-                        printf ("next token %s\n", token);
-                        fgets(buffer, sizeof(buffer), filePointer);
-                        printf ("buffer %s\n",buffer);
+                } else if (strcmp("desc",token)==0){
+                    uint8_t count=parseArray(filePointer,&(spell->desc));
+                    printf("size %d\n", count);
+                    for (int i=0; i<count; i++) {
+                        printf("desc[%d] =%s\n",i, spell->desc[i]);
                     }
-
-                    spell->desc = string;
-                    printf("desc =%s\n",spell->desc);
-
                 } else if(strcmp("higher_level",token)==0){
-                    parsing += 2;
-                    token = strsep(&parsing, ",");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
-                    spell->higher_level = string;
-                    printf("Higher level =%s\n",spell->higher_level);
+                    uint8_t count=parseArray(filePointer,&(spell->higher_level));
+                    printf("size %d\n", count);
+                    for (int i=0; i<count; i++) {
+                        printf("higher lvl[%d] =%s\n",i, spell->higher_level[i]);
+                    }
                 } else if(strcmp("range",token)==0){
-                    parsing += 2;
-                    token = strsep(&parsing, ",");
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
                     spell->range = string;
                     printf("range =%s\n",spell->range);
-                } /*else if(strcmp("components",token)==0){ //TODO DOESNT WORK
-                    int i = 0;
-                    while (strcmp("]",token)!=0){
-                        token = strsep(&parsing, "\"");
-                        parsing += 2;
-                        token = strsep(&parsing, ",");
-                        string = (char *) calloc(strlen(token)+1,sizeof(char));
-                        strcpy(string,token);
-                        if(strcmp("V",token)==0){
-                            spell->components[i] = V;
-                        }else if(strcmp("S",token)==0){
-                            spell->components[i] = S;
-                        }else if(strcmp("M",token)==0){
-                            spell->components[i] = M;
-                        }
-                        i++;
+                } else if(strcmp("components",token)==0){
+                    uint8_t count= parseEnumComponentsArray(filePointer,&(spell->components));
+                    printf("size %d\n", count);
+                    for (int i=0; i<count; i++) {
+                        printf("components[%d] =%d\n",i, spell->components[i]);
                     }
-                    for ( int j=0;j<i;j++){
-                        printf("component[%d] = %s",j,spell->components);
-                    }
-                }*/ else if(strcmp("material",token)==0){
-                    parsing += 2;
-                    token = strsep(&parsing, ",");
+                } else if(strcmp("material",token)==0){
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
                     spell->material = string;
@@ -273,7 +332,7 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                     while (strcmp("}",token)!=0) {
                         token = strsep(&parsing, "\"");
                         if (strcmp("type", token) == 0) {
-                            parsing += 2;
+                            parsing += 3;
                             token = strsep(&parsing, ",");
                             string = (char *) calloc(strlen(token) + 1, sizeof(char));
                             strcpy(string, token);
@@ -297,17 +356,16 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                 } else if(strcmp("ritual",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
+                    printf ("token %s\n",token);
                     if(strcmp("true",token)==0){
                         spell->ritual = true;
                     } else if(strcmp("false",token)==0){
                         spell->ritual = false;
                     }
-                    printf("ritual =%s\n",spell->ritual);
+                    printf("ritual =%d\n",spell->ritual);
                 } else if(strcmp("duration",token)==0){
-                    parsing += 2;
-                    token = strsep(&parsing, ",");
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
                     spell->duration = string;
@@ -315,17 +373,15 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                 } else if(strcmp("concentration",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
                     if(strcmp("true",token)==0){
                         spell->concentration = true;
                     } else if(strcmp("false",token)==0){
                         spell->concentration = false;
                     }
-                    printf("concentration =%s\n",spell->concentration);
+                    printf("concentration =%d\n",spell->concentration);
                 } else if(strcmp("casting_time",token)==0){
-                    parsing += 2;
-                    token = strsep(&parsing, ",");
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
                     spell->casting_time = string;
@@ -333,21 +389,26 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                 } else if(strcmp("level",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
-                    spell->level = atoi(string);
+                    spell->level = atoi(token);
                     printf("level =%d\n",spell->level);
                 } else if(strcmp("attack_type",token)==0){
-                    parsing += 2;
-                    token = strsep(&parsing, ",");
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
                     string = (char *) calloc(strlen(token)+1,sizeof(char));
                     strcpy(string,token);
                     spell->attack_type = string;
                     printf("attack_type =%s\n",spell->attack_type);
-                } else if (strcmp("damage_at_character_level",token)==0){//TODO FILL IN THIS PART OF STRUCT
-                    damageGroup = damage_at_character_level;
-                } else if(strcmp("damage_at_slot_level",token)==0){
-                    damageGroup = damage_at_slot_level;
+                } else if (strcmp("damage",token)==0){
+                    fgets(buffer, sizeof(buffer), filePointer);
+                    parsing = buffer; // Point to buffer (reset)
+                    char *token = strsep(&parsing, "\"");
+                    if (strcmp("damage_at_character_level",token)==0){//TODO FILL IN THIS PART OF STRUCT
+                        damageGroup = damage_at_character_level;
+                    } else if(strcmp("damage_at_slot_level",token)==0) {
+                        damageGroup = damage_at_slot_level;
+                    } else if(strcmp("damage_type",token)==0) {
+                        damageGroup = damage_at_slot_level;
+                    }
                 } /*else if(strcmp("school",token)==0){//TODO DOESNT WORK
                     while (strcmp("}",token)!=0) {
                         token = strsep(&parsing, "\"");
