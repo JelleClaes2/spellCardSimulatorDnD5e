@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #define MAX_LIST_SIZE (100)
 
@@ -102,7 +103,7 @@ void cycle(struct spellNode** head);
 
 int main(int argc , char* argv[]){
 
-    struct spellNode* spellList = NULL;
+    //struct spellNode* spellList = NULL; //TODO FIX SEGMENTATION FAULT
     uint8_t characterLevel = 0;
     char* nameHistoryFile;
     uint8_t amountOfSpellSlots[9]; //highest slot level == 9 and never higher than 9 slots of a certain spell
@@ -145,9 +146,47 @@ int main(int argc , char* argv[]){
             jsonParser(filePointerSpell, currentSpel);
             fclose(filePointerSpell);
             printf("file location = %s\n",fileName);
-            //addSpell(&spellList, currentSpel);//TODO USE PUSH POP AND CYCLE 
+            //addSpell(&spellList, currentSpel);//TODO USE PUSH POP AND CYCLE
         }
     }
+
+    /*int opt; //TODO FIX 
+    int i=0;
+
+    while ((opt = getopt(argc, argv, "s:l:h:")) != -1) {
+        switch (opt) {
+            case 's':
+                i++;
+                for(int j=0;j<9;j++){
+                    printf("argv[%d] = %s \n",i,argv[i]);
+                    if(isdigit(*argv[i]) != 0){
+                        amountOfSpellSlots[j] = atoi(argv[i]);
+                        i++;
+                        printf("spell slots [%d] = %d\n",j,amountOfSpellSlots[j]);
+                    }else{
+                        break;
+                    }
+                }
+                break;
+            case 'l':
+                // Handle option -l (character level)
+                printf("Character level: %s\n", optarg);
+                break;
+            case 'h':
+                // Handle option -h (name history file)
+                printf("Name history file: %s\n", optarg);
+                break;
+            default:
+                // Handle unrecognized options or invalid usage
+                fprintf(stderr, "Usage: %s -s <spell slots> -l <character level> -h <name history file>\n", argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    // Handle non-option arguments (e.g., spell files)
+    for (int i = optind; i < argc; i++) {
+        printf("Spell file: %s\n", argv[i]);
+    }*/
 
     FILE* filePointerHistory = fopen(nameHistoryFile,"w");
     if(filePointerHistory == NULL){
@@ -156,7 +195,7 @@ int main(int argc , char* argv[]){
     }
 
     fclose(filePointerHistory);
-    freeSpells(spellList);
+    //freeSpells(spellList);
     return 0;
 }
 
