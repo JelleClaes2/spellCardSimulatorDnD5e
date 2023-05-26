@@ -240,10 +240,9 @@ void parseNameUrlIndex (FILE* filePointer, char** name, char** url, char** index
 uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey) {
     char buffer[1024];    // Prepare a line buffer
     char *parsing = NULL; // Prepare helper pointer for strsep
-    char *string;
     char *token;
 
-    (*anyKey) = ( struct anyKey*) calloc(1,sizeof(struct anyKey*)); // only allocate 1 char pointer place
+    (*anyKey) = ( struct anyKey*) calloc(1,sizeof(struct anyKey)); // only allocate 1 char pointer place
     fgets(buffer, sizeof(buffer), filePointer);
     parsing=buffer;
     uint8_t count=0;
@@ -251,7 +250,7 @@ uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey) {
     while (strchr(buffer,'}')== NULL) {
         count++;
         if (count != 1) {
-            (*anyKey) = (struct anyKey*) realloc(*anyKey, count * sizeof(struct anyKey*)); // add one more entry
+            (*anyKey) = (struct anyKey*) realloc(*anyKey, count * sizeof(struct anyKey)); // add one more entry
         }
         strsep(&parsing, "\"");
         token = strsep(&parsing, "\"");
@@ -259,12 +258,9 @@ uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey) {
 
         strsep(&parsing, "\"");
         token = strsep(&parsing, "\"");
+        (*anyKey)[count-1].value = (char *) calloc(strlen(token) + 1, sizeof(char));
+        strcpy((*anyKey)[count-1].value, token);
 
-        string = (char *) calloc(strlen(token) + 1, sizeof(char));
-        strcpy(string, token);
-
-
-        (*anyKey)[count-1].value = string;
         fgets(buffer, sizeof(buffer), filePointer);
         parsing = buffer;
     }
@@ -421,34 +417,35 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                     spell->attack_type = string;
                     printf("attack_type =%s\n",spell->attack_type);
                 } else if (strcmp("damage",token)==0){
+
+                    fgets(buffer, sizeof(buffer), filePointer);
                     while(strchr(buffer,'}')==NULL){
-                        fgets(buffer, sizeof(buffer), filePointer);
                         parsing = buffer; // Point to buffer (reset)
                         strsep(&parsing, "\"");
                         token = strsep(&parsing, "\"");
-                        printf("damage token %s\n", token);
-                        if (strcmp("damage_at_character_level",token)==0){//TODO FILL IN THIS PART OF STRUCT AND FIX KEY VAL
+                        if (strcmp("damage_at_character_level",token)==0){//TODO FILL IN THIS PART OF STRUCT
                             damageGroup = damage_at_character_level;
                             uint8_t count=parseAnyKeyArray(filePointer,&(spell->damage.keyValues));
                             printf("size %d\n", count);
                             for (int i=0; i<count; i++) {
                                 printf("key val [%d] =%d , %s\n",i, spell->damage.keyValues[i].level,spell->damage.keyValues[i].value);
                             }
+                            fgets(buffer, sizeof(buffer), filePointer);
                         } else if(strcmp("damage_at_slot_level",token)==0) {
-                            printf("here am I\n");
                             damageGroup = damage_at_slot_level;
                             uint8_t count=parseAnyKeyArray(filePointer,&(spell->damage.keyValues));
                             printf("size %d\n", count);
                             for (int i=0; i<count; i++) {
                                 printf("key val [%d] =%d , %s\n",i, spell->damage.keyValues[i].level,spell->damage.keyValues[i].value);
                             }
+                            fgets(buffer, sizeof(buffer), filePointer);
                         } else if(strcmp("damage_type",token)==0) {
                             parseNameUrlIndex(filePointer,&(spell->damage_type.name), &(spell->damage_type.url), &(spell->damage_type.index));
                             printf("damage type name =%s\n",spell->damage_type.name);
                             printf("damage type url =%s\n",spell->damage_type.url);
                             printf("damage type index =%s\n",spell->damage_type.index);
                             fgets(buffer, sizeof(buffer), filePointer);
-                            //fgets(buffer, sizeof(buffer), filePointer);
+                            fgets(buffer, sizeof(buffer), filePointer);
                         }
                     }
 
