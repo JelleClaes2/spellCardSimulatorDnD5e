@@ -81,19 +81,32 @@ struct spell{
     //TODO ADD DC SEE JSON FILES
 };
 
+struct spellNode {
+    struct spell* data;
+    struct spellNode* next;
+};
+
+
 void jsonParser(FILE* filePointer, struct spell* spell);
 uint8_t parseArray (FILE* filePointer, char*** element);
 uint8_t parseEnumComponentsArray (FILE* filePointer, enum components** element);
 void parseNameUrlIndex (FILE* filePointer, char** name, char** url, char** index);
 uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey);
+uint8_t parseNameUrlIndexArray(FILE* filePointer, struct resource** classes);
+void addSpell(struct spellNode** head, struct spell* spell);
+void freeSpells(struct spellNode* head);
+void push(struct spellNode** head, struct spell* spell);
+struct spell* pop(struct spellNode** head);
+void cycle(struct spellNode** head);
+
 
 int main(int argc , char* argv[]){
 
+    struct spellNode* spellList = NULL;
     uint8_t characterLevel = 0;
     char* nameHistoryFile;
     uint8_t amountOfSpellSlots[9]; //highest slot level == 9 and never higher than 9 slots of a certain spell
     char* fileName;
-
 
     for(int i=1;i<argc;i++){
         if(argv[i][0] == '-'){
@@ -132,6 +145,7 @@ int main(int argc , char* argv[]){
             jsonParser(filePointerSpell, currentSpel);
             fclose(filePointerSpell);
             printf("file location = %s\n",fileName);
+            //addSpell(&spellList, currentSpel);//TODO USE PUSH POP AND CYCLE 
         }
     }
 
@@ -142,6 +156,7 @@ int main(int argc , char* argv[]){
     }
 
     fclose(filePointerHistory);
+    freeSpells(spellList);
     return 0;
 }
 
@@ -267,6 +282,56 @@ uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey) {
     return count;
 }
 
+uint8_t parseNameUrlIndexArray(FILE* filePointer, struct resource** classes) {
+    char buffer[1024] = " ";    // Prepare a line buffer
+    char *parsing = NULL; // Prepare helper pointer for strsep
+    char *token;
+    uint8_t amountOfStructs = 0;
+    fgets(buffer, sizeof(buffer), filePointer);
+    printf("buffer = %s\n",buffer);
+
+
+    while(strchr(buffer,']')== NULL){
+        printf("buffer name array = %s\n",buffer);
+        for (int i = 0; i < 3; i++) {
+            if(i!=0){
+                fgets(buffer, sizeof(buffer), filePointer);
+                //printf("new line = %s\n",buffer);
+            }
+
+            parsing = buffer;
+            strsep(&parsing, "\"");
+            token = strsep(&parsing, "\"");
+            //printf("token = %s\n",token);
+            if (token != NULL) {
+                if (strcmp(token, "index") == 0) {
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
+                    printf("token index = %s\n",token);
+                    //(*classes)[i].index = (char *)calloc(strlen(token) + 1, sizeof(char));
+                    //strcpy((*classes)[i].index, token);
+                } else if (strcmp("name", token) == 0) {
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
+                    printf("token name = %s\n",token);
+                    //(*classes)[i].name = (char *)calloc(strlen(token) + 1, sizeof(char));
+                    //strcpy((*classes)[i].name, token);
+                } else if (strcmp("url", token) == 0) {
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
+                    printf("token url = %s\n",token);
+                    //(*classes)[i].url = (char *)calloc(strlen(token) + 1, sizeof(char));
+                    //strcpy((*classes)[i].url, token);
+                }else if(strchr(token,'{') != NULL){
+                    amountOfStructs++;
+                }
+            }
+        }
+    }
+    return amountOfStructs;
+}
+
+
 void jsonParser(FILE* filePointer, struct spell* spell){
     enum damage_group damageGroup;
 
@@ -375,33 +440,7 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                         }
                     }
 
-                }
-
-                   /* while (strcmp("}",token)!=0) {
-                        token = strsep(&parsing, "\"");
-                        if (strcmp("type", token) == 0) {
-                            parsing += 3;
-                            token = strsep(&parsing, ",");
-                            string = (char *) calloc(strlen(token) + 1, sizeof(char));
-                            strcpy(string, token);
-                            if (strcmp("sphere", token) == 0) {
-                                spell->area_of_effect.type = sphere;
-                            } else if (strcmp("cone", token) == 0) {
-                                spell->area_of_effect.type = cone;
-                            } else if (strcmp("cylinder", token) == 0) {
-                                spell->area_of_effect.type = cylinder;
-                            } else if (strcmp("line", token) == 0) {
-                                spell->area_of_effect.type = line;
-                            } else if (strcmp("cube", token) == 0) {
-                                spell->area_of_effect.type = cube;
-                            }
-                            printf("area_of_effect_type =%d\n",spell->area_of_effect.type);
-                        } else if (strcmp("size", token) == 0) {
-                            spell->area_of_effect.size = atoi(string);
-                            printf("area_of_effect_size = %d\n",spell->area_of_effect.size);
-                        }
-                    }
-                } */else if(strcmp("ritual",token)==0){
+                } else if(strcmp("ritual",token)==0){
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     printf ("token %s\n",token);
@@ -484,8 +523,20 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                     printf("school name =%s\n",spell->school.name);
                     printf("school url =%s\n",spell->school.url);
                     printf("school index =%s\n",spell->school.index);
-                }/* else if(strcmp("classes",token)==0){ //TODO DOESNT WORK
-                    uint8_t classesCounter = 0;
+                } /*else if(strcmp("classes",token)==0) { //TODO DOESNT WORK
+                    printf("classes\n");
+                    fgets(buffer, sizeof(buffer), filePointer);
+                    printf("buffer = %s\n",buffer);
+                    uint8_t amountOfClasses = 0;
+                    amountOfClasses = parseNameUrlIndexArray(filePointer,&(spell->classes));
+                    printf("amount of classes = %d\n",amountOfClasses);
+                    for(int i=0;i<amountOfClasses;i++){
+                        printf("class[%d] name =%s\n",i,spell->classes[i].name);
+                        printf("class url[%d] =%s\n",i,spell->classes[i].url);
+                        printf("class index[%d] =%s\n",i,spell->classes[i].index);
+                    }
+                }
+                    /*uint8_t classesCounter = 0;
                     while (1){
                         token = strsep(&parsing, "\"");
                         if(strcmp("]",token)!=0)//find
@@ -532,3 +583,61 @@ void jsonParser(FILE* filePointer, struct spell* spell){
             }
         }
     }
+
+void addSpell(struct spellNode** head, struct spell* spell) {
+    struct spellNode* newNode = (struct spellNode*)malloc(sizeof(struct spellNode));
+    newNode->data = spell;
+    newNode->next = NULL;
+
+    if (*head == NULL) {
+        *head = newNode;
+    } else {
+        struct spellNode* current = *head;
+        while (current->next != NULL) {
+            current = current->next;
+        }
+        current->next = newNode;
+    }
+}
+
+// Function to free the linked list memory
+void freeSpells(struct spellNode* head) {
+    struct spellNode* current = head;
+    while (current != NULL) {
+        struct spellNode* temp = current;
+        current = current->next;
+        free(temp->data);
+        free(temp);
+    }
+}
+
+void push(struct spellNode** head, struct spell* spell) {
+    struct spellNode* newNode = (struct spellNode*) malloc(sizeof(struct spellNode));
+    newNode->data = spell;
+    newNode->next = *head;
+    *head = newNode;
+}
+
+struct spell* pop(struct spellNode** head) {
+    if (*head == NULL) {
+        return NULL; // Empty list
+    }
+    struct spellNode* temp = *head;
+    struct spell* spell = temp->data;
+    *head = (*head)->next;
+    free(temp);
+    return spell;
+}
+
+void cycle(struct spellNode** head) {
+    if (*head == NULL) {
+        return; // Empty list
+    }
+    struct spellNode* last = *head;
+    while (last->next != NULL) {
+        last = last->next;
+    }
+    last->next = *head;
+    *head = (*head)->next;
+    last->next->next = NULL;
+}
