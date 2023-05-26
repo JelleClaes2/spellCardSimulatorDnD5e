@@ -346,8 +346,38 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                     strcpy(string,token);
                     spell->material = string;
                     printf("material =%s\n",spell->material);
-                } /*else if(strcmp("area_of_effect",token)==0){//TODO READ NEW LINES NOT WHILE
-                    while (strcmp("}",token)!=0) {
+                } else if(strcmp("area_of_effect",token)==0){
+                    for (int i=0;i<2;i++){
+                        fgets(buffer, sizeof(buffer), filePointer);
+                        parsing = buffer;
+                        strsep(&parsing, "\"");
+                        token = strsep(&parsing, "\"");
+                        if (strcmp(token,"type")==0){
+                            parsing += 3;
+                            token = strsep(&parsing, "\"");
+                            if (strcmp("sphere", token) == 0) {
+                                spell->area_of_effect.type = sphere;
+                            } else if (strcmp("cone", token) == 0) {
+                                spell->area_of_effect.type = cone;
+                            } else if (strcmp("cylinder", token) == 0) {
+                                spell->area_of_effect.type = cylinder;
+                            } else if (strcmp("line", token) == 0) {
+                                spell->area_of_effect.type = line;
+                            } else if (strcmp("cube", token) == 0) {
+                                spell->area_of_effect.type = cube;
+                            }
+                            printf("area_of_effect_type =%d\n",spell->area_of_effect.type);
+                        } else if(strcmp(token , "size")==0){
+                            parsing += 2;
+                            token = strsep(&parsing, "\n");
+                            spell->area_of_effect.size = atoi(token);
+                            printf("area_of_effect_size = %d\n",spell->area_of_effect.size);
+                        }
+                    }
+
+                }
+
+                   /* while (strcmp("}",token)!=0) {
                         token = strsep(&parsing, "\"");
                         if (strcmp("type", token) == 0) {
                             parsing += 3;
@@ -423,7 +453,7 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                         parsing = buffer; // Point to buffer (reset)
                         strsep(&parsing, "\"");
                         token = strsep(&parsing, "\"");
-                        if (strcmp("damage_at_character_level",token)==0){//TODO FILL IN THIS PART OF STRUCT
+                        if (strcmp("damage_at_character_level",token)==0){
                             damageGroup = damage_at_character_level;
                             uint8_t count=parseAnyKeyArray(filePointer,&(spell->damage.keyValues));
                             printf("size %d\n", count);
@@ -449,7 +479,7 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                         }
                     }
 
-                } else if(strcmp("school",token)==0){//TODO DOESNT WORK
+                } else if(strcmp("school",token)==0){
                     parseNameUrlIndex(filePointer,&(spell->school.name), &(spell->school.url), &(spell->school.index));
                     printf("school name =%s\n",spell->school.name);
                     printf("school url =%s\n",spell->school.url);
