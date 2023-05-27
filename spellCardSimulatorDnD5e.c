@@ -103,7 +103,7 @@ void cycle(struct spellNode** head);
 
 int main(int argc , char* argv[]){
 
-    //struct spellNode* spellList = NULL; //TODO FIX SEGMENTATION FAULT
+    struct spellNode* spellList; //TODO FIX SEGMENTATION FAULT
     uint8_t characterLevel = 0;
     char* nameHistoryFile;
     uint8_t amountOfSpellSlots[9]; //highest slot level == 9 and never higher than 9 slots of a certain spell
@@ -150,22 +150,21 @@ int main(int argc , char* argv[]){
         }
     }
 
-    /*int opt; //TODO FIX 
-    int i=0;
+    /*int opt;
+    int i = 0;
+    //int amountOfSpellSlots[9] = {0}; // Assuming a maximum of 9 spell slots
 
     while ((opt = getopt(argc, argv, "s:l:h:")) != -1) {
         switch (opt) {
             case 's':
                 i++;
-                for(int j=0;j<9;j++){
-                    printf("argv[%d] = %s \n",i,argv[i]);
-                    if(isdigit(*argv[i]) != 0){
-                        amountOfSpellSlots[j] = atoi(argv[i]);
-                        i++;
-                        printf("spell slots [%d] = %d\n",j,amountOfSpellSlots[j]);
-                    }else{
+                for (int j = 0; j < 9; j++) {
+                    if (i >= argc || !isdigit(*argv[i])) {
                         break;
                     }
+                    amountOfSpellSlots[j] = atoi(argv[i]);
+                    printf("spell slots [%d] = %d\n", j, amountOfSpellSlots[j]);
+                    i++;
                 }
                 break;
             case 'l':
@@ -184,8 +183,8 @@ int main(int argc , char* argv[]){
     }
 
     // Handle non-option arguments (e.g., spell files)
-    for (int i = optind; i < argc; i++) {
-        printf("Spell file: %s\n", argv[i]);
+    for (int j = optind; j < argc; j++) {
+        printf("Spell file: %s\n", argv[j]);
     }*/
 
     FILE* filePointerHistory = fopen(nameHistoryFile,"w");
@@ -328,50 +327,29 @@ uint8_t parseNameUrlIndexArray(FILE* filePointer, struct resource** classes) {
     uint8_t amountOfStructs = 0;
     fgets(buffer, sizeof(buffer), filePointer);
     printf("buffer = %s\n",buffer);
+    (*classes) = ( struct resource*) calloc(1,sizeof(struct resource)); // only allocate 1 char pointer place
 
+    while (strchr(buffer,']')== NULL){
 
-    while(strchr(buffer,']')== NULL){
-        printf("buffer name array = %s\n",buffer);
-        for (int i = 0; i < 3; i++) {
-            if(i!=0){
-                fgets(buffer, sizeof(buffer), filePointer);
-                //printf("new line = %s\n",buffer);
+        printf(" while buffer = %s\n",buffer);
+
+        if (strchr(buffer,'{')!=NULL) {
+            amountOfStructs++;
+            if (amountOfStructs == 1) {
+                (*classes) = (struct resource *) calloc(1, sizeof(struct resource)); // only allocate 1 char pointer place
+            } else {
+                (*classes) = ( struct resource*) realloc(*classes, amountOfStructs * sizeof(struct resource)); // add one more entry
             }
-
-            parsing = buffer;
-            strsep(&parsing, "\"");
-            token = strsep(&parsing, "\"");
-            //printf("token = %s\n",token);
-            if (token != NULL) {
-                if (strcmp(token, "index") == 0) {
-                    parsing += 3;
-                    token = strsep(&parsing, "\"");
-                    printf("token index = %s\n",token);
-                    //(*classes)[i].index = (char *)calloc(strlen(token) + 1, sizeof(char));
-                    //strcpy((*classes)[i].index, token);
-                } else if (strcmp("name", token) == 0) {
-                    parsing += 3;
-                    token = strsep(&parsing, "\"");
-                    printf("token name = %s\n",token);
-                    //(*classes)[i].name = (char *)calloc(strlen(token) + 1, sizeof(char));
-                    //strcpy((*classes)[i].name, token);
-                } else if (strcmp("url", token) == 0) {
-                    parsing += 3;
-                    token = strsep(&parsing, "\"");
-                    printf("token url = %s\n",token);
-                    //(*classes)[i].url = (char *)calloc(strlen(token) + 1, sizeof(char));
-                    //strcpy((*classes)[i].url, token);
-                }else if(strchr(token,'{') != NULL){
-                    amountOfStructs++;
-                }
-            }
+            parseNameUrlIndex (filePointer,&((*classes)[amountOfStructs-1].name),&((*classes)[amountOfStructs-1].url),&((*classes)[amountOfStructs-1].index));
+            fgets(buffer, sizeof(buffer), filePointer);
+            fgets(buffer, sizeof(buffer), filePointer);
         }
     }
     return amountOfStructs;
 }
 
 
-void jsonParser(FILE* filePointer, struct spell* spell){
+void jsonParser(FILE* filePointer, struct spell* spell) {
     enum damage_group damageGroup;
 
     char *string;
@@ -382,7 +360,8 @@ void jsonParser(FILE* filePointer, struct spell* spell){
     char check[6] = "count";
     while (!feof(filePointer)) // Keep reading file till EndOfFile is reached
     {
-        if (fgets(buffer, sizeof(buffer), filePointer) == NULL) // Read one line (stops on newline or eof), will return NULL on eof or fail
+        if (fgets(buffer, sizeof(buffer), filePointer) ==
+            NULL) // Read one line (stops on newline or eof), will return NULL on eof or fail
         {
             fclose(filePointer);
             break; // Stop reading
@@ -396,67 +375,67 @@ void jsonParser(FILE* filePointer, struct spell* spell){
             token = strsep(&parsing, "\""); // Find next token
             //printf("buffer = %s\n", buffer);
             if (token != NULL) {
-                printf("token = '%s'\n",token);
+                printf("token = '%s'\n", token);
                 if (strcmp(token, "index") == 0) {
-                    parsing+=3;
-                    token = strsep(&parsing, "\"");
-                    string = (char *)calloc(strlen(token)+1, sizeof(char));
-                    strcpy(string,token);
-                    spell->index = string;
-                    printf("index = %s\n",spell->index);
-                } else if(strcmp("name",token)==0){
-                    parsing+=3;
-                    token = strsep(&parsing, "\"");
-                    string = (char *)calloc(strlen(token)+1, sizeof(char));
-                    strcpy(string,token);
-                    spell->name = string;
-                    printf("name =%s\n",spell->name);
-                }else if(strcmp("url",token)==0) {
                     parsing += 3;
                     token = strsep(&parsing, "\"");
                     string = (char *) calloc(strlen(token) + 1, sizeof(char));
-                    strcpy(string,token);
+                    strcpy(string, token);
+                    spell->index = string;
+                    printf("index = %s\n", spell->index);
+                } else if (strcmp("name", token) == 0) {
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
+                    string = (char *) calloc(strlen(token) + 1, sizeof(char));
+                    strcpy(string, token);
+                    spell->name = string;
+                    printf("name =%s\n", spell->name);
+                } else if (strcmp("url", token) == 0) {
+                    parsing += 3;
+                    token = strsep(&parsing, "\"");
+                    string = (char *) calloc(strlen(token) + 1, sizeof(char));
+                    strcpy(string, token);
                     spell->url = string;
                     printf("url = %s\n", spell->url);
-                } else if (strcmp("desc",token)==0){
-                    uint8_t count=parseArray(filePointer,&(spell->desc));
+                } else if (strcmp("desc", token) == 0) {
+                    uint8_t count = parseArray(filePointer, &(spell->desc));
                     printf("size %d\n", count);
-                    for (int i=0; i<count; i++) {
-                        printf("desc[%d] =%s\n",i, spell->desc[i]);
+                    for (int i = 0; i < count; i++) {
+                        printf("desc[%d] =%s\n", i, spell->desc[i]);
                     }
-                } else if(strcmp("higher_level",token)==0){
-                    uint8_t count=parseArray(filePointer,&(spell->higher_level));
+                } else if (strcmp("higher_level", token) == 0) {
+                    uint8_t count = parseArray(filePointer, &(spell->higher_level));
                     printf("size %d\n", count);
-                    for (int i=0; i<count; i++) {
-                        printf("higher lvl[%d] =%s\n",i, spell->higher_level[i]);
+                    for (int i = 0; i < count; i++) {
+                        printf("higher lvl[%d] =%s\n", i, spell->higher_level[i]);
                     }
-                } else if(strcmp("range",token)==0){
+                } else if (strcmp("range", token) == 0) {
                     parsing += 3;
                     token = strsep(&parsing, "\"");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
+                    string = (char *) calloc(strlen(token) + 1, sizeof(char));
+                    strcpy(string, token);
                     spell->range = string;
-                    printf("range =%s\n",spell->range);
-                } else if(strcmp("components",token)==0){
-                    uint8_t count= parseEnumComponentsArray(filePointer,&(spell->components));
+                    printf("range =%s\n", spell->range);
+                } else if (strcmp("components", token) == 0) {
+                    uint8_t count = parseEnumComponentsArray(filePointer, &(spell->components));
                     printf("size %d\n", count);
-                    for (int i=0; i<count; i++) {
-                        printf("components[%d] =%d\n",i, spell->components[i]);
+                    for (int i = 0; i < count; i++) {
+                        printf("components[%d] =%d\n", i, spell->components[i]);
                     }
-                } else if(strcmp("material",token)==0){
+                } else if (strcmp("material", token) == 0) {
                     parsing += 3;
                     token = strsep(&parsing, "\"");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
+                    string = (char *) calloc(strlen(token) + 1, sizeof(char));
+                    strcpy(string, token);
                     spell->material = string;
-                    printf("material =%s\n",spell->material);
-                } else if(strcmp("area_of_effect",token)==0){
-                    for (int i=0;i<2;i++){
+                    printf("material =%s\n", spell->material);
+                } else if (strcmp("area_of_effect", token) == 0) {
+                    for (int i = 0; i < 2; i++) {
                         fgets(buffer, sizeof(buffer), filePointer);
                         parsing = buffer;
                         strsep(&parsing, "\"");
                         token = strsep(&parsing, "\"");
-                        if (strcmp(token,"type")==0){
+                        if (strcmp(token, "type") == 0) {
                             parsing += 3;
                             token = strsep(&parsing, "\"");
                             if (strcmp("sphere", token) == 0) {
@@ -470,158 +449,126 @@ void jsonParser(FILE* filePointer, struct spell* spell){
                             } else if (strcmp("cube", token) == 0) {
                                 spell->area_of_effect.type = cube;
                             }
-                            printf("area_of_effect_type =%d\n",spell->area_of_effect.type);
-                        } else if(strcmp(token , "size")==0){
+                            printf("area_of_effect_type =%d\n", spell->area_of_effect.type);
+                        } else if (strcmp(token, "size") == 0) {
                             parsing += 2;
                             token = strsep(&parsing, "\n");
                             spell->area_of_effect.size = atoi(token);
-                            printf("area_of_effect_size = %d\n",spell->area_of_effect.size);
+                            printf("area_of_effect_size = %d\n", spell->area_of_effect.size);
                         }
                     }
 
-                } else if(strcmp("ritual",token)==0){
+                } else if (strcmp("ritual", token) == 0) {
                     parsing += 2;
                     token = strsep(&parsing, ",");
-                    printf ("token %s\n",token);
-                    if(strcmp("true",token)==0){
+                    printf("token %s\n", token);
+                    if (strcmp("true", token) == 0) {
                         spell->ritual = true;
-                    } else if(strcmp("false",token)==0){
+                    } else if (strcmp("false", token) == 0) {
                         spell->ritual = false;
                     }
-                    printf("ritual =%d\n",spell->ritual);
-                } else if(strcmp("duration",token)==0){
+                    printf("ritual =%d\n", spell->ritual);
+                } else if (strcmp("duration", token) == 0) {
                     parsing += 3;
                     token = strsep(&parsing, "\"");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
+                    string = (char *) calloc(strlen(token) + 1, sizeof(char));
+                    strcpy(string, token);
                     spell->duration = string;
-                    printf("duration =%s\n",spell->duration);
-                } else if(strcmp("concentration",token)==0){
+                    printf("duration =%s\n", spell->duration);
+                } else if (strcmp("concentration", token) == 0) {
                     parsing += 2;
                     token = strsep(&parsing, ",");
-                    if(strcmp("true",token)==0){
+                    if (strcmp("true", token) == 0) {
                         spell->concentration = true;
-                    } else if(strcmp("false",token)==0){
+                    } else if (strcmp("false", token) == 0) {
                         spell->concentration = false;
                     }
-                    printf("concentration =%d\n",spell->concentration);
-                } else if(strcmp("casting_time",token)==0){
+                    printf("concentration =%d\n", spell->concentration);
+                } else if (strcmp("casting_time", token) == 0) {
                     parsing += 3;
                     token = strsep(&parsing, "\"");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
+                    string = (char *) calloc(strlen(token) + 1, sizeof(char));
+                    strcpy(string, token);
                     spell->casting_time = string;
-                    printf("casting_time =%s\n",spell->casting_time);
-                } else if(strcmp("level",token)==0){
+                    printf("casting_time =%s\n", spell->casting_time);
+                } else if (strcmp("level", token) == 0) {
                     parsing += 2;
                     token = strsep(&parsing, ",");
                     spell->level = atoi(token);
-                    printf("level =%d\n",spell->level);
-                } else if(strcmp("attack_type",token)==0){
+                    printf("level =%d\n", spell->level);
+                } else if (strcmp("attack_type", token) == 0) {
                     parsing += 3;
                     token = strsep(&parsing, "\"");
-                    string = (char *) calloc(strlen(token)+1,sizeof(char));
-                    strcpy(string,token);
+                    string = (char *) calloc(strlen(token) + 1, sizeof(char));
+                    strcpy(string, token);
                     spell->attack_type = string;
-                    printf("attack_type =%s\n",spell->attack_type);
-                } else if (strcmp("damage",token)==0){
+                    printf("attack_type =%s\n", spell->attack_type);
+                } else if (strcmp("damage", token) == 0) {
 
                     fgets(buffer, sizeof(buffer), filePointer);
-                    while(strchr(buffer,'}')==NULL){
+                    while (strchr(buffer, '}') == NULL) {
                         parsing = buffer; // Point to buffer (reset)
                         strsep(&parsing, "\"");
                         token = strsep(&parsing, "\"");
-                        if (strcmp("damage_at_character_level",token)==0){
+                        if (strcmp("damage_at_character_level", token) == 0) {
                             damageGroup = damage_at_character_level;
-                            uint8_t count=parseAnyKeyArray(filePointer,&(spell->damage.keyValues));
+                            uint8_t count = parseAnyKeyArray(filePointer, &(spell->damage.keyValues));
                             printf("size %d\n", count);
-                            for (int i=0; i<count; i++) {
-                                printf("key val [%d] =%d , %s\n",i, spell->damage.keyValues[i].level,spell->damage.keyValues[i].value);
+                            for (int i = 0; i < count; i++) {
+                                printf("key val [%d] =%d , %s\n", i, spell->damage.keyValues[i].level,
+                                       spell->damage.keyValues[i].value);
                             }
                             fgets(buffer, sizeof(buffer), filePointer);
-                        } else if(strcmp("damage_at_slot_level",token)==0) {
+                        } else if (strcmp("damage_at_slot_level", token) == 0) {
                             damageGroup = damage_at_slot_level;
-                            uint8_t count=parseAnyKeyArray(filePointer,&(spell->damage.keyValues));
+                            uint8_t count = parseAnyKeyArray(filePointer, &(spell->damage.keyValues));
                             printf("size %d\n", count);
-                            for (int i=0; i<count; i++) {
-                                printf("key val [%d] =%d , %s\n",i, spell->damage.keyValues[i].level,spell->damage.keyValues[i].value);
+                            for (int i = 0; i < count; i++) {
+                                printf("key val [%d] =%d , %s\n", i, spell->damage.keyValues[i].level,
+                                       spell->damage.keyValues[i].value);
                             }
                             fgets(buffer, sizeof(buffer), filePointer);
-                        } else if(strcmp("damage_type",token)==0) {
-                            parseNameUrlIndex(filePointer,&(spell->damage_type.name), &(spell->damage_type.url), &(spell->damage_type.index));
-                            printf("damage type name =%s\n",spell->damage_type.name);
-                            printf("damage type url =%s\n",spell->damage_type.url);
-                            printf("damage type index =%s\n",spell->damage_type.index);
+                        } else if (strcmp("damage_type", token) == 0) {
+                            parseNameUrlIndex(filePointer, &(spell->damage_type.name), &(spell->damage_type.url),
+                                              &(spell->damage_type.index));
+                            printf("damage type name =%s\n", spell->damage_type.name);
+                            printf("damage type url =%s\n", spell->damage_type.url);
+                            printf("damage type index =%s\n", spell->damage_type.index);
                             fgets(buffer, sizeof(buffer), filePointer);
                             fgets(buffer, sizeof(buffer), filePointer);
                         }
                     }
 
-                } else if(strcmp("school",token)==0){
-                    parseNameUrlIndex(filePointer,&(spell->school.name), &(spell->school.url), &(spell->school.index));
-                    printf("school name =%s\n",spell->school.name);
-                    printf("school url =%s\n",spell->school.url);
-                    printf("school index =%s\n",spell->school.index);
-                } /*else if(strcmp("classes",token)==0) { //TODO DOESNT WORK
+                } else if (strcmp("school", token) == 0) {
+                    parseNameUrlIndex(filePointer, &(spell->school.name), &(spell->school.url), &(spell->school.index));
+                    printf("school name =%s\n", spell->school.name);
+                    printf("school url =%s\n", spell->school.url);
+                    printf("school index =%s\n", spell->school.index);
+                } else if (strcmp("classes", token) == 0) { //TODO DOESNT WORK
                     printf("classes\n");
-                    fgets(buffer, sizeof(buffer), filePointer);
-                    printf("buffer = %s\n",buffer);
                     uint8_t amountOfClasses = 0;
-                    amountOfClasses = parseNameUrlIndexArray(filePointer,&(spell->classes));
-                    printf("amount of classes = %d\n",amountOfClasses);
-                    for(int i=0;i<amountOfClasses;i++){
-                        printf("class[%d] name =%s\n",i,spell->classes[i].name);
-                        printf("class url[%d] =%s\n",i,spell->classes[i].url);
-                        printf("class index[%d] =%s\n",i,spell->classes[i].index);
+                    amountOfClasses = parseNameUrlIndexArray(filePointer, &(spell->classes));
+                    printf("amount of classes = %d\n", amountOfClasses);
+                    for (int i = 0; i < amountOfClasses; i++) {
+                        printf("class[%d] name =%s\n", i, spell->classes[i].name);
+                        printf("class url[%d] =%s\n", i, spell->classes[i].url);
+                        printf("class index[%d] =%s\n", i, spell->classes[i].index);
                     }
-                }
-                    /*uint8_t classesCounter = 0;
-                    while (1){
-                        token = strsep(&parsing, "\"");
-                        if(strcmp("]",token)!=0)//find
-                        {
-                            break;
-                        }
-                        char* key_token = strsep(&parsing, "\"");
-                        parsing += 2;
-                        token = strsep(&parsing, "\"");
-                        //token = strsep(&parsing, ",");
-                        string = (char *) calloc(strlen(token)+1,sizeof(char));
-                        strcpy(string,token);
-                        if(strcmp("index",key_token)==0){
-                            strcpy(string,token);
-                            spell.classes->index = string;
-                            printf("classes index =%s\n",spell.classes->index);
-                        } else if(strcmp("name",key_token)==0){
-                            spell.classes->name = string;
-                            printf("classes name =%s\n",spell.classes->name);
-                        } else if(strcmp("url",key_token)==0){
-                            spell.classes->url = string;
-                            printf("classes url =%s\n",spell.classes->url);
-                        }
+                } else if (strcmp("subclasses", token) == 0) { //TODO DOESNT WORK
+                    printf("subclasses\n");
+                    uint8_t amountOfSubclasses = 0;
+                    amountOfSubclasses = parseNameUrlIndexArray(filePointer, &(spell->subclasses));
+                    printf("amount of subclasses = %d\n", amountOfSubclasses);
+                    for (int i = 0; i < amountOfSubclasses; i++) {
+                        printf("class[%d] name =%s\n", i, spell->subclasses[i].name);
+                        printf("class url[%d] =%s\n", i, spell->subclasses[i].url);
+                        printf("class index[%d] =%s\n", i, spell->subclasses[i].index);
                     }
-                } *//*else if(strcmp("subclasses",token)==0){ //TODO DOESNT WORK
-                    while (strcmp("]",token)!=0){
-                        token = strsep(&parsing, "\"");
-                        parsing += 2;
-                        token = strsep(&parsing, ",");
-                        string = (char *) calloc(strlen(token)+1,sizeof(char));
-                        strcpy(string,token);
-                        if(strcmp("index",token)==0){
-                            spell.subclasses->index = string;
-                            printf("subclasses index =%s\n",spell.subclasses->index);
-                        } else if(strcmp("name",token)==0){
-                            spell.subclasses->name = string;
-                            printf("subclasses name =%s\n",spell.subclasses->name);
-                        } else if(strcmp("url",token)==0){
-                            spell.subclasses->url = string;
-                            printf("subclasses url =%s\n",spell.subclasses->url);
-                        }
-                    }*/
                 }
             }
         }
     }
+}
 
 void addSpell(struct spellNode** head, struct spell* spell) {
     struct spellNode* newNode = (struct spellNode*)malloc(sizeof(struct spellNode));
