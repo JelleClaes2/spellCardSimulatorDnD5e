@@ -94,16 +94,15 @@ uint8_t parseEnumComponentsArray (FILE* filePointer, enum components** element);
 void parseNameUrlIndex (FILE* filePointer, char** name, char** url, char** index);
 uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey);
 uint8_t parseNameUrlIndexArray(FILE* filePointer, struct resource** classes);
-void addSpell(struct spellNode** head, struct spell* spell);
-void freeSpells(struct spellNode* head);
 void push(struct spellNode** head, struct spell* spell);
+void freeSpells(struct spellNode* head);
 struct spell* pop(struct spellNode** head);
 void cycle(struct spellNode** head);
 
 
 int main(int argc , char* argv[]){
 
-    struct spellNode* spellList; //TODO FIX SEGMENTATION FAULT
+    struct spellNode* spellList = NULL;
     uint8_t characterLevel = 0;
     char* nameHistoryFile;
     uint8_t amountOfSpellSlots[9]; //highest slot level == 9 and never higher than 9 slots of a certain spell
@@ -146,46 +145,9 @@ int main(int argc , char* argv[]){
             jsonParser(filePointerSpell, currentSpel);
             fclose(filePointerSpell);
             printf("file location = %s\n",fileName);
-            //addSpell(&spellList, currentSpel);//TODO USE PUSH POP AND CYCLE
+            push(&spellList, currentSpel);// PUSH == add spell POP==delete first AND CYCLE == cycle in deck
         }
     }
-
-    /*int opt;
-    int i = 0;
-    //int amountOfSpellSlots[9] = {0}; // Assuming a maximum of 9 spell slots
-
-    while ((opt = getopt(argc, argv, "s:l:h:")) != -1) {
-        switch (opt) {
-            case 's':
-                i++;
-                for (int j = 0; j < 9; j++) {
-                    if (i >= argc || !isdigit(*argv[i])) {
-                        break;
-                    }
-                    amountOfSpellSlots[j] = atoi(argv[i]);
-                    printf("spell slots [%d] = %d\n", j, amountOfSpellSlots[j]);
-                    i++;
-                }
-                break;
-            case 'l':
-                // Handle option -l (character level)
-                printf("Character level: %s\n", optarg);
-                break;
-            case 'h':
-                // Handle option -h (name history file)
-                printf("Name history file: %s\n", optarg);
-                break;
-            default:
-                // Handle unrecognized options or invalid usage
-                fprintf(stderr, "Usage: %s -s <spell slots> -l <character level> -h <name history file>\n", argv[0]);
-                exit(EXIT_FAILURE);
-        }
-    }
-
-    // Handle non-option arguments (e.g., spell files)
-    for (int j = optind; j < argc; j++) {
-        printf("Spell file: %s\n", argv[j]);
-    }*/
 
     FILE* filePointerHistory = fopen(nameHistoryFile,"w");
     if(filePointerHistory == NULL){
@@ -373,7 +335,7 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
         {
 
             token = strsep(&parsing, "\""); // Find next token
-            //printf("buffer = %s\n", buffer);
+            printf("buffer = %s\n", buffer);
             if (token != NULL) {
                 printf("token = '%s'\n", token);
                 if (strcmp(token, "index") == 0) {
@@ -555,27 +517,30 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                         printf("class index[%d] =%s\n", i, spell->classes[i].index);
                     }
                 } else if (strcmp("subclasses", token) == 0) { //TODO DOESNT WORK
-                    printf("subclasses\n");
-                    uint8_t amountOfSubclasses = 0;
-                    amountOfSubclasses = parseNameUrlIndexArray(filePointer, &(spell->subclasses));
-                    printf("amount of subclasses = %d\n", amountOfSubclasses);
-                    for (int i = 0; i < amountOfSubclasses; i++) {
-                        printf("class[%d] name =%s\n", i, spell->subclasses[i].name);
-                        printf("class url[%d] =%s\n", i, spell->subclasses[i].url);
-                        printf("class index[%d] =%s\n", i, spell->subclasses[i].index);
+                    printf("parsing = %s\n",parsing);
+                    if(strchr(parsing,']')==NULL){
+                        uint8_t amountOfSubclasses = 0;
+                        amountOfSubclasses = parseNameUrlIndexArray(filePointer, &(spell->subclasses));
+                        printf("amount of subclasses = %d\n", amountOfSubclasses);
+                        for (int i = 0; i < amountOfSubclasses; i++) {
+                            printf("class[%d] name =%s\n", i, spell->subclasses[i].name);
+                            printf("class url[%d] =%s\n", i, spell->subclasses[i].url);
+                            printf("class index[%d] =%s\n", i, spell->subclasses[i].index);
+                        }
                     }
+
                 }
             }
         }
     }
 }
 
-void addSpell(struct spellNode** head, struct spell* spell) {
+void push(struct spellNode** head, struct spell* spell) {
     struct spellNode* newNode = (struct spellNode*)malloc(sizeof(struct spellNode));
     newNode->data = spell;
     newNode->next = NULL;
-
     if (*head == NULL) {
+        printf (" here I am\n");
         *head = newNode;
     } else {
         struct spellNode* current = *head;
@@ -595,13 +560,6 @@ void freeSpells(struct spellNode* head) {
         free(temp->data);
         free(temp);
     }
-}
-
-void push(struct spellNode** head, struct spell* spell) {
-    struct spellNode* newNode = (struct spellNode*) malloc(sizeof(struct spellNode));
-    newNode->data = spell;
-    newNode->next = *head;
-    *head = newNode;
 }
 
 struct spell* pop(struct spellNode** head) {
