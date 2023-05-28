@@ -130,7 +130,7 @@ int main(int argc , char* argv[]){
             } else if(argv[i][1] == 'h'){
                 nameHistoryFile = argv[i+1];
                 i++;
-                printf("name history file = %s",nameHistoryFile);
+                printf("name history file = %s\n",nameHistoryFile);
             }
         } else{
             struct spell* currentSpel = (struct spell*)calloc(1,sizeof(struct spell));
@@ -146,7 +146,6 @@ int main(int argc , char* argv[]){
             fclose(filePointerSpell);
             printf("file location = %s\n",fileName);
             push(&spellList, currentSpel);// PUSH == add spell POP==delete first AND CYCLE == cycle in deck
-            printSpell(spellList);
         }
     }
 
@@ -156,20 +155,31 @@ int main(int argc , char* argv[]){
         return -1;
     }
 
-    //TODO FIX VOID SCANF(FGETS) AND DELETE SWITCH (IF(STRCMP())
-    //char* userInput;
-    //printf("What do u want to do with this spell (cycle , delete or use)?\n");
-    //(void)scanf("%s",userInput);
-   //
-   /*switch (userInput) {
-        case "cycle":
-        case "Cycle":
-            cycle(&spellList);
-            break;
+    printSpell(spellList);//TODO FIX FOR LOCATE-OBJECT
+    //TODO FIX IF DC IS FILLED IN IN JSON JUST SKIP IT
+    // TODO BLUR DESC DOESNT WORK
+    //TODO IDENTIFY DOESNT WORK AT ALL
+    //TODO VICIOUS-MOCKERY
 
+    //TODO DELETE SWITCH (IF(STRCMP())
+    printf("\n\n");
+    char userInput[20];
 
-    }*/
+    printf("What do u want to do with this spell (cycle , delete, cast or stop)?\n");
+    printf("To cast use: cast -l x (x is the level you want to cast this spell as)\n ")
+    fgets(userInput, sizeof(userInput),stdin);
 
+    userInput[strcspn(userInput, "\n")] = '\0';
+
+    if(strcmp(userInput,"cycle")==0 || strcmp(userInput,"Cycle")==0 || strcmp(userInput,"CYCLE") ==0){
+        cycle(&spellList);
+        printSpell(spellList);
+    }else if(strcmp(userInput,"delete")==0 || strcmp(userInput,"Delete")==0 || strcmp(userInput,"DELETE")==0){
+        pop(&spellList);
+        printSpell(spellList);
+    }else if(strcmp(userInput,"use")==0 || strcmp(userInput,"Use")==0 || strcmp(userInput,"USE")==0){//TODO MAKE IT SO IT IS CAST -L X
+        //TODO MAYBE CAST AS LAST AND THEN FOR LOOP AND CHECK FOR -L OR THE WORD CAST
+    }
     fclose(filePointerHistory);
     freeSpells(spellList);
     return 0;
