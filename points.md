@@ -1,21 +1,21 @@
-# Points 0/15
+# Points 11/15
 
 ## checklist for the points
 
-- [ ] Use of correct structs
-- [ ] Data is stored correctly in the members of the structs
-- [ ] Corect use and type of pointers
-- [ ] Pointers are correctly used with function parameters
-- [ ] Memory is correctly and efficiently allocatted
+- [X] Use of correct structs
+- [X] Data is stored correctly in the members of the structs
+- [X] Corect use and type of pointers
+- [X] Pointers are correctly used with function parameters
+- [X] Memory is correctly and efficiently allocatted
 - [ ] No memory leaks, correctly freeing memory
-- [ ] Correct use of arguments to main (input en output files via flags)
-- [ ] Structure for a linked list is correctly and efficiently provided
-- [ ] Functiuns to push, pop and cycle on the linked list
-- [ ] Store choises in history file
-- [ ] Parse the json data to the datastructure
+- [X] Correct use of arguments to main (input en output files via flags)
+- [X] Structure for a linked list is correctly and efficiently provided
+- [X] Functiuns to push, pop and cycle on the linked list
+- [X] Store choises in history file
+- [X] Parse the json data to the datastructure
 - [ ] Use of loaded document and playable part keep track of spell slots
 - [ ] Works without crashing
-- [ ] Usefull GIT commits during 5 weeks
+- [X] Usefull GIT commits during 5 weeks
 - [ ] Nice extra example: flowchart (miro), use of getopt() or provide URL
 
 ## explanation for the points 
