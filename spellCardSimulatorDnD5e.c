@@ -156,8 +156,22 @@ int main(int argc , char* argv[]){
         return -1;
     }
 
+    //TODO FIX VOID SCANF(FGETS) AND DELETE SWITCH (IF(STRCMP())
+    //char* userInput;
+    //printf("What do u want to do with this spell (cycle , delete or use)?\n");
+    //(void)scanf("%s",userInput);
+   //
+   /*switch (userInput) {
+        case "cycle":
+        case "Cycle":
+            cycle(&spellList);
+            break;
+
+
+    }*/
+
     fclose(filePointerHistory);
-    //freeSpells(spellList);
+    freeSpells(spellList);
     return 0;
 }
 
@@ -511,6 +525,7 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                     printf("classes\n");
                     uint8_t amountOfClasses = 0;
                     amountOfClasses = parseNameUrlIndexArray(filePointer, &(spell->classes));
+                    spell->classesCounter =amountOfClasses;
                     printf("amount of classes = %d\n", amountOfClasses);
                     for (int i = 0; i < amountOfClasses; i++) {
                         printf("class[%d] name =%s\n", i, spell->classes[i].name);
@@ -522,6 +537,7 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                     if(strchr(parsing,']')==NULL){
                         uint8_t amountOfSubclasses = 0;
                         amountOfSubclasses = parseNameUrlIndexArray(filePointer, &(spell->subclasses));
+                        spell->subclassesCounter = amountOfSubclasses;
                         printf("amount of subclasses = %d\n", amountOfSubclasses);
                         for (int i = 0; i < amountOfSubclasses; i++) {
                             printf("class[%d] name =%s\n", i, spell->subclasses[i].name);
@@ -611,10 +627,10 @@ void printSpell(struct spellNode* head){
 
     printf("range : %s\n",(*head).data->range);
 
-    printf("components : ");//TODO DOESNT WORK
+    printf("components : ");
     count = sizeof((*head).data->components)/ sizeof(enum components*);
     for(int i=0;i<count;i++){
-        printf("%d",(*head).data->components);//TODO MAKE SWITCH CASE TO PRINT RIGHT LETTER
+        printf("%d",(*head).data->components[i]);//TODO MAKE SWITCH CASE TO PRINT RIGHT LETTER
     }
     printf("\n");
 
@@ -653,19 +669,19 @@ void printSpell(struct spellNode* head){
     printf("name : %s\n",(*head).data->school.name);
     printf("url : %s\n",(*head).data->school.url);
 
-    /*printf("classes : ");
-    for(int i;i<(*head).data->classesCounter;i++){
+    printf("classes : ");
+    for(int i=0;i<(*head).data->classesCounter;i++){
         printf("class : %d\n",i);
-        printf("index : %s\n",(*head).data->classes->index);
-        printf("name : %s\n",(*head).data->classes->name);
-        printf("url : %s\n",head->data->classes->url);
-    }*/ //TODO DOESNT WORK
+        printf("index : %s\n",(*head).data->classes[i].index);
+        printf("name : %s\n",(*head).data->classes[i].name);
+        printf("url : %s\n",head->data->classes[i].url);
+    }
 
-    /*printf("subclasses : ");
-    for(int i;i<(*head).data->subclassesCounter;i++){
+    printf("subclasses : ");
+    for(int i=0;i<(*head).data->subclassesCounter;i++){
         printf("subclass : %d\n",i);
-        printf("index : %s\n",(*head).data->subclasses->index);
-        printf("name : %s\n",(*head).data->subclasses->name);
-        printf("url : %s\n",head->data->subclasses->url);
-    }*/ //TODO DOESNT WORK
+        printf("index : %s\n",(*head).data->subclasses[i].index);
+        printf("name : %s\n",(*head).data->subclasses[i].name);
+        printf("url : %s\n",head->data->subclasses[i].url);
+    }
 }
