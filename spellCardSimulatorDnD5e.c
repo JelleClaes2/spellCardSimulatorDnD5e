@@ -79,7 +79,6 @@ struct spell{
     struct resource* classes;
     uint8_t subclassesCounter;
     struct resource* subclasses;
-    //TODO ADD DC SEE JSON FILES
 };
 
 struct spellNode {
@@ -98,6 +97,7 @@ void push(struct spellNode** head, struct spell* spell);
 void freeSpells(struct spellNode* head);
 struct spell* pop(struct spellNode** head);
 void cycle(struct spellNode** head);
+void printSpell(struct spellNode* head);
 
 
 int main(int argc , char* argv[]){
@@ -146,6 +146,7 @@ int main(int argc , char* argv[]){
             fclose(filePointerSpell);
             printf("file location = %s\n",fileName);
             push(&spellList, currentSpel);// PUSH == add spell POP==delete first AND CYCLE == cycle in deck
+            printSpell(spellList);
         }
     }
 
@@ -506,7 +507,7 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                     printf("school name =%s\n", spell->school.name);
                     printf("school url =%s\n", spell->school.url);
                     printf("school index =%s\n", spell->school.index);
-                } else if (strcmp("classes", token) == 0) { //TODO DOESNT WORK
+                } else if (strcmp("classes", token) == 0) {
                     printf("classes\n");
                     uint8_t amountOfClasses = 0;
                     amountOfClasses = parseNameUrlIndexArray(filePointer, &(spell->classes));
@@ -516,7 +517,7 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                         printf("class url[%d] =%s\n", i, spell->classes[i].url);
                         printf("class index[%d] =%s\n", i, spell->classes[i].index);
                     }
-                } else if (strcmp("subclasses", token) == 0) { //TODO DOESNT WORK
+                } else if (strcmp("subclasses", token) == 0) {
                     printf("parsing = %s\n",parsing);
                     if(strchr(parsing,']')==NULL){
                         uint8_t amountOfSubclasses = 0;
@@ -584,4 +585,87 @@ void cycle(struct spellNode** head) {
     last->next = *head;
     *head = (*head)->next;
     last->next->next = NULL;
+}
+
+void printSpell(struct spellNode* head){
+    uint8_t count =0;
+    printf("index : %s\n",(*head).data->index);
+
+    printf("name : %s\n",(*head).data->name);
+
+    printf("url : %s\n",(*head).data->url);
+
+    printf("description : ");
+    count = sizeof((*head).data->desc)/ sizeof(char **);
+    for(int i=0;i<count;i++){
+        printf("%s",(*head).data->desc[i]);
+    }
+    printf("\n");
+
+    printf("higher level: ");
+    count = sizeof((*head).data->higher_level)/ sizeof(char **);
+    for(int i=0;i<count;i++){
+        printf("%s",(*head).data->higher_level[i]);
+    }
+    printf("\n");
+
+    printf("range : %s\n",(*head).data->range);
+
+    printf("components : ");//TODO DOESNT WORK
+    count = sizeof((*head).data->components)/ sizeof(enum components*);
+    for(int i=0;i<count;i++){
+        printf("%d",(*head).data->components);//TODO MAKE SWITCH CASE TO PRINT RIGHT LETTER
+    }
+    printf("\n");
+
+    printf("material : %s\n",(*head).data->material);
+
+    printf("area of effect : \n");
+    printf("size : %d\n",(*head).data->area_of_effect.size);
+    printf("type : %d\n",(*head).data->area_of_effect.type);//TODO MAKE SWITCH CASE
+
+    printf("ritual : %d\n",(*head).data->ritual);//TODO MAKE SWITCH CASE
+
+    printf("duration : %s\n",(*head).data->duration);
+
+    printf("concentration : %d\n",(*head).data->concentration);//TODO MAKE SWITCH CASE
+
+    printf("casting time : %s\n",(*head).data->casting_time);
+
+    printf("level : %d\n",(*head).data->level);
+
+    printf("attack type : %s\n",(*head).data->attack_type);
+
+    printf("damage at levels : %d\n",(*head).data->damage.damage_group);//TODO ADD SWITCH CASE
+    count = sizeof((*head).data->damage.keyValues)/ sizeof(struct anyKey);
+    for(int i=0; i<count;i++){
+        printf(" damage level %d : ",(*head).data->damage.keyValues->level);
+        printf("amount of damage %s\n",(*head).data->damage.keyValues->value);
+    }
+
+    printf("damage type :\n");
+    printf("index : %s\n",(*head).data->damage_type.index);
+    printf("name : %s\n",(*head).data->damage_type.name);
+    printf("url : %s\n",(*head).data->damage_type.url);
+
+    printf("school : \n");
+    printf("index : %s\n",(*head).data->school.index);
+    printf("name : %s\n",(*head).data->school.name);
+    printf("url : %s\n",(*head).data->school.url);
+
+    /*printf("classes : ");
+    for(int i;i<(*head).data->classesCounter;i++){
+        printf("class : %d\n",i);
+        printf("index : %s\n",(*head).data->classes->index);
+        printf("name : %s\n",(*head).data->classes->name);
+        printf("url : %s\n",head->data->classes->url);
+    }*/ //TODO DOESNT WORK
+
+    /*printf("subclasses : ");
+    for(int i;i<(*head).data->subclassesCounter;i++){
+        printf("subclass : %d\n",i);
+        printf("index : %s\n",(*head).data->subclasses->index);
+        printf("name : %s\n",(*head).data->subclasses->name);
+        printf("url : %s\n",head->data->subclasses->url);
+    }*/ //TODO DOESNT WORK
 }
