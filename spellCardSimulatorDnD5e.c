@@ -155,18 +155,21 @@ int main(int argc , char* argv[]){
         return -1;
     }
 
+    //TODO FIX SEGMENTATION FAULT
+
     printSpell(spellList);//TODO FIX FOR LOCATE-OBJECT
     //TODO FIX IF DC IS FILLED IN IN JSON JUST SKIP IT
     // TODO BLUR DESC DOESNT WORK
     //TODO IDENTIFY DOESNT WORK AT ALL
     //TODO VICIOUS-MOCKERY
 
-    //TODO DELETE SWITCH (IF(STRCMP())
     printf("\n\n");
     char userInput[20];
+    char stringWrite[100];
+    uint8_t castingLevel =0;
 
     printf("What do u want to do with this spell (cycle , delete, cast or stop)?\n");
-    printf("To cast use: cast -l x (x is the level you want to cast this spell as)\n ")
+    printf("To cast use: cast -l x (x is the level you want to cast this spell as)\n ");
     fgets(userInput, sizeof(userInput),stdin);
 
     userInput[strcspn(userInput, "\n")] = '\0';
@@ -174,11 +177,16 @@ int main(int argc , char* argv[]){
     if(strcmp(userInput,"cycle")==0 || strcmp(userInput,"Cycle")==0 || strcmp(userInput,"CYCLE") ==0){
         cycle(&spellList);
         printSpell(spellList);
+        fputs("cycled in the deck\n",filePointerHistory);
     }else if(strcmp(userInput,"delete")==0 || strcmp(userInput,"Delete")==0 || strcmp(userInput,"DELETE")==0){
         pop(&spellList);
         printSpell(spellList);
+        sprintf(stringWrite,"deleted spell %s from deck\n",spellList->data->name);
+        fputs(stringWrite,filePointerHistory);
     }else if(strcmp(userInput,"use")==0 || strcmp(userInput,"Use")==0 || strcmp(userInput,"USE")==0){//TODO MAKE IT SO IT IS CAST -L X
         //TODO MAYBE CAST AS LAST AND THEN FOR LOOP AND CHECK FOR -L OR THE WORD CAST
+        sprintf(stringWrite,"used spell %s as level %d\n",spellList->data->name,castingLevel);
+        fputs(stringWrite,filePointerHistory);
     }
     fclose(filePointerHistory);
     freeSpells(spellList);
@@ -640,21 +648,63 @@ void printSpell(struct spellNode* head){
     printf("components : ");
     count = sizeof((*head).data->components)/ sizeof(enum components*);
     for(int i=0;i<count;i++){
-        printf("%d",(*head).data->components[i]);//TODO MAKE SWITCH CASE TO PRINT RIGHT LETTER
+        switch((*head).data->components[i]){
+            case 0:
+                printf("V\n");
+                break;
+            case 1:
+                printf("S\n");
+                break;
+            case 2:
+                printf("M\n");
+        }
     }
-    printf("\n");
 
     printf("material : %s\n",(*head).data->material);
 
     printf("area of effect : \n");
     printf("size : %d\n",(*head).data->area_of_effect.size);
-    printf("type : %d\n",(*head).data->area_of_effect.type);//TODO MAKE SWITCH CASE
 
-    printf("ritual : %d\n",(*head).data->ritual);//TODO MAKE SWITCH CASE
+    printf("type : ");
+    switch ((*head).data->area_of_effect.type) {
+        case 0:
+            printf("sphere\n");
+            break;
+        case 1:
+            printf("cone\n");
+            break;
+        case 2:
+            printf("cylinder\n");
+            break;
+        case 3:
+            printf("line\n");
+            break;
+        case 4:
+            printf("cube\n");
+            break;
+    }
+
+    printf("ritual : ");
+    switch ((*head).data->ritual) {
+        case 0:
+            printf("false\n");
+            break;
+        case 1:
+            printf("true\n");
+            break;
+    }
 
     printf("duration : %s\n",(*head).data->duration);
 
-    printf("concentration : %d\n",(*head).data->concentration);//TODO MAKE SWITCH CASE
+    printf("concentration : ");
+    switch ((*head).data->concentration) {
+        case 0:
+            printf("false\n");
+            break;
+        case 1:
+            printf("true\n");
+            break;
+    }
 
     printf("casting time : %s\n",(*head).data->casting_time);
 
@@ -662,7 +712,14 @@ void printSpell(struct spellNode* head){
 
     printf("attack type : %s\n",(*head).data->attack_type);
 
-    printf("damage at levels : %d\n",(*head).data->damage.damage_group);//TODO ADD SWITCH CASE
+    printf("damage at levels : ");
+    switch ((*head).data->damage.damage_group) {
+        case 0:
+            printf("damage at character level\n");
+            break;
+        case 1:
+            printf("damage at slot level\n");
+    }
     count = sizeof((*head).data->damage.keyValues)/ sizeof(struct anyKey);
     for(int i=0; i<count;i++){
         printf(" damage level %d : ",(*head).data->damage.keyValues->level);
