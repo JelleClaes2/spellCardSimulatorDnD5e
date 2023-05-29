@@ -103,7 +103,8 @@ void parseNameUrlIndex (FILE* filePointer, char** name, char** url, char** index
 uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey);
 uint8_t parseNameUrlIndexArray(FILE* filePointer, struct resource** classes);
 void push(struct spellNode** head, struct spell* spell);
-void freeSpells(struct spellNode* head);
+void freeSpellList(struct spellNode* head);
+void freeSpell(struct spell* spell);
 struct spell* pop(struct spellNode** head);
 void cycle(struct spellNode** head);
 void printSpell(struct spellNode* head);
@@ -120,15 +121,12 @@ int main(int argc , char* argv[]){
 
     for(int i=1;i<argc;i++){
         if(argv[i][0] == '-'){
-            printf("argv[%d] = %s \n",i,argv[i]);
             if(argv[i][1] == 's'){
                 i++;
                 for(int j=0;j<9;j++){
-                    printf("argv[%d] = %s \n",i,argv[i]);
                     if(isdigit(*argv[i]) != 0){
                         amountOfSpellSlots[j] = atoi(argv[i]);
                         i++;
-                        printf("spell slots [%d] = %d\n",j,amountOfSpellSlots[j]);
                     }else{
                         break;
                     }
@@ -136,11 +134,9 @@ int main(int argc , char* argv[]){
             } if(argv[i][1] == 'l'){
                 characterLevel = atoi(argv[i+1]);
                 i++;
-                printf("character level = %d\n",characterLevel);
             } else if(argv[i][1] == 'h'){
                 nameHistoryFile = argv[i+1];
                 i++;
-                printf("name history file = %s\n",nameHistoryFile);
             }
         } else{
             struct spell* currentSpel = (struct spell*)calloc(1,sizeof(struct spell));
@@ -156,7 +152,7 @@ int main(int argc , char* argv[]){
             }
             jsonParser(filePointerSpell, currentSpel);
             fclose(filePointerSpell);
-            printf("file location = %s\n",fileName);
+            free(fileName);
             push(&spellList, currentSpel);// PUSH == add spell POP==delete first AND CYCLE == cycle in deck
         }
     }
@@ -167,10 +163,6 @@ int main(int argc , char* argv[]){
         return -1;
     }
 
-    printSpell(spellList);
-
-
-    printf("\n\n");
     char userInput[100];
     char stringWrite[100];
     uint8_t castingLevel =0;
@@ -195,7 +187,6 @@ int main(int argc , char* argv[]){
             printf("\n");
         } else if (strstr(userInput,"cast")!=0) {
             parsing = userInput;
-            printf("user input %s\n",parsing);
             strsep(&parsing, " "); // remove word cast
             char* spellName = strsep(&parsing, " ");
             struct spellNode *viewSpell = spellList;
@@ -235,9 +226,7 @@ int main(int argc , char* argv[]){
             }
         } else {
             parsing = userInput;
-            printf("user input %s\n",parsing);
             char* spellName = strsep(&parsing, " ");
-            printf("spell name %s \n",spellName);
             struct spellNode *viewSpell = spellList;
             while (viewSpell != NULL && strcmp(viewSpell->data->name, spellName) != 0) {
                 viewSpell = viewSpell->next;
@@ -252,9 +241,9 @@ int main(int argc , char* argv[]){
         fgets(userInput, sizeof(userInput),stdin);
         userInput[strcspn(userInput, "\n")] = '\0';
     }
-    
+
     fclose(filePointerHistory);
-    freeSpells(spellList);
+    freeSpellList(spellList);
     return 0;
 
 
@@ -685,14 +674,137 @@ void push(struct spellNode** head, struct spell* spell) {
 }
 
 // Function to free the linked list memory
-void freeSpells(struct spellNode* head) {
+void freeSpellList(struct spellNode* head) {
     struct spellNode* current = head;
     while (current != NULL) {
         struct spellNode* temp = current;
         current = current->next;
-        free(temp->data);
+        freeSpell(temp->data);
         free(temp);
     }
+}
+
+// Function to free a spell
+void freeSpell(struct spell* spell) {
+    if (spell->name!=NULL){
+        free(spell->name);
+    }
+    if (spell->index!=NULL){
+        free(spell->index);
+    }
+    if (spell->url!=NULL){
+        free(spell->url);
+    }
+    if (spell->range!=NULL){
+        free(spell->range);
+    }
+    if (spell->material!=NULL){
+        free(spell->material);
+    }
+    for (int i=0;i<spell->descCounter;i++){
+        free(spell->desc[i]);
+    }
+    if (spell->desc!=NULL) {
+        free(spell->desc);
+    }
+    for (int i=0;i<spell->higher_levelCounter;i++){
+        free(spell->higher_level[i]);
+    }
+    if (spell->higher_level!=NULL) {
+        free(spell->higher_level);
+    }
+    if (spell->components!=NULL) {
+        free(spell->components);
+    }
+    if (spell->area_of_effect!=NULL) {
+        free(spell->area_of_effect);
+    }
+    if (spell->duration!=NULL) {
+        free(spell->duration);
+    }
+    if (spell->casting_time!=NULL) {
+        free(spell->casting_time);
+    }
+    if (spell->attack_type!=NULL) {
+        free(spell->attack_type);
+    }
+
+    for (int i=0;i<spell->damageKeyValueCounter;i++){
+        free(spell->damage->keyValues[i].value);
+    }
+
+    if (spell->damage!=NULL && spell->damage->keyValues!=NULL) {
+        free(spell->damage->keyValues);
+    }
+
+    if (spell->damage!=NULL) {
+        free(spell->damage);
+    }
+
+    if (spell->school.name != NULL){
+        free(spell->school.name);
+    }
+
+    if (spell->school.url != NULL) {
+        free(spell->school.url);
+    }
+    if (spell->school.index != NULL) {
+        free(spell->school.index);
+    }
+
+    if (spell->damage_type.name != NULL) {
+        free(spell->damage_type.name);
+    }
+
+    if (spell->damage_type.url != NULL) {
+        free(spell->damage_type.url);
+    }
+
+    if (spell->damage_type.index != NULL) {
+        free(spell->damage_type.index);
+    }
+
+    for (int i=0;i<spell->classesCounter;i++){
+        if (spell->classes[i].name!=NULL) {
+            free(spell->classes[i].name);
+        }
+        if (spell->classes[i].url!=NULL) {
+            free(spell->classes[i].url);
+        }
+        if (spell->classes[i].index!=NULL) {
+            free(spell->classes[i].index);
+        }
+    }
+    if (spell->classes!=NULL){
+        free(spell->classes);
+    }
+    for (int i=0;i<spell->subclassesCounter;i++){
+        if (spell->subclasses[i].name!=NULL) {
+            free(spell->subclasses[i].name);
+        }
+        if (spell->subclasses[i].url!=NULL) {
+            free(spell->subclasses[i].url);
+        }
+        if (spell->subclasses[i].index!=NULL) {
+            free(spell->subclasses[i].index);
+        }
+    }
+    if (spell->subclasses!=NULL){
+        free(spell->subclasses);
+    }
+    if (spell->dc.dc_succes!=NULL){
+        free(spell->dc.dc_succes);
+    }
+    if (spell->dc.dc_type.name!=NULL){
+        free(spell->dc.dc_type.name);
+    }
+    if (spell->dc.dc_type.url!=NULL){
+        free(spell->dc.dc_type.url);
+    }
+    if (spell->dc.dc_type.name!=NULL){
+        free(spell->dc.dc_type.index);
+    }
+
 }
 
 struct spell* pop(struct spellNode** head) {
@@ -1016,19 +1128,5 @@ void printSpellOption(struct spellNode* head, char* optionString){
         }
         options = strsep(&optionString, " ");
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
