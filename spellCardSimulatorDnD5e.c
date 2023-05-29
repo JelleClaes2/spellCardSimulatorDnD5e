@@ -107,6 +107,7 @@ void freeSpells(struct spellNode* head);
 struct spell* pop(struct spellNode** head);
 void cycle(struct spellNode** head);
 void printSpell(struct spellNode* head);
+void printSpellOption(struct spellNode* head,char* optionstring);
 
 
 int main(int argc , char* argv[]){
@@ -170,47 +171,88 @@ int main(int argc , char* argv[]){
 
 
     printf("\n\n");
-    char userInput[20];
+    char userInput[100];
     char stringWrite[100];
     uint8_t castingLevel =0;
+    char* parsing;
 
-    printf("What do u want to do with this spell (cycle , delete, cast or stop)?\n");
-    printf("To cast use: cast -l x (x is the level you want to cast this spell as)\n ");
+    printf("The following queries are available:\n");
+    printf("View spell list: Returns a list of all the available spells\n");
+    printf("spell-name  [-at attack_type] [-ct casting_time] [-cl classes] [-co components] \n");
+    printf("[-de description] [-du duration] [-r range] ...\n");
+    printf("stop : stops the program\n");
     fgets(userInput, sizeof(userInput),stdin);
-
     userInput[strcspn(userInput, "\n")] = '\0';
 
-    if(strcmp(userInput,"cycle")==0 || strcmp(userInput,"Cycle")==0 || strcmp(userInput,"CYCLE") ==0){
-        cycle(&spellList);
-        printSpell(spellList);
-        fputs("cycled in the deck\n",filePointerHistory);
-    }else if(strcmp(userInput,"delete")==0 || strcmp(userInput,"Delete")==0 || strcmp(userInput,"DELETE")==0){
-        struct spell* deletedSpell = pop(&spellList);
-        printSpell(spellList);
-        sprintf(stringWrite,"deleted spell %s from deck\n",deletedSpell->name);
-        fputs(stringWrite,filePointerHistory);
-    }else if(strstr(userInput,"cast")!=0 || strstr(userInput,"Cast")!=0 || strstr(userInput,"CAST")!=0){//TODO MAKE IT SO IT IS CAST -L X
-
-        if((spellList->data->damage->damage_group) == 0){ //damage at character level
-            printf("This spell cant be cast as an higher level. This spells damage dependants on character level\n");
-            //TODO PRINT DAMAGE ROLL DEPENDING ON LEVEL;
-        }else{
-            uint8_t castingLevel = 0;
-            if(strstr(userInput,"-l")!=0 || strstr(userInput,"-L")!=0) {
-                castingLevel = atoi(strstr(userInput,"-l")+3);
-                printf("casting level %d\n",castingLevel);
-                amountOfSpellSlots[castingLevel-1] --;
-                printf("These spell slots are left\n");
-                for(int j=0;j<9;j++){
-                    printf("spell slots level %d = %d\n",j+1,amountOfSpellSlots[j]);
-                }
+    while (strcmp(userInput,"stop")!=0){
+        if(strcmp(userInput,"View spell list")==0) {
+            printf ("Available spells are :");
+            struct spellNode* temp = spellList;
+            while (temp != NULL) {
+                printf (" %s",temp->data->name);
+                temp = temp->next;
             }
-            sprintf(stringWrite,"used spell %s as level %d\n",spellList->data->name,castingLevel);
-            fputs(stringWrite,filePointerHistory);
-            //TODO CHECK IF IT IS POSSIBLE TO CAST ON THIS LEVEL
+            printf("\n");
+        } else if (strstr(userInput,"cast")!=0) {
+            parsing = userInput;
+            printf("user input %s\n",parsing);
+            strsep(&parsing, " "); // remove word cast
+            char* spellName = strsep(&parsing, " ");
+            struct spellNode *viewSpell = spellList;
+            while (viewSpell != NULL && strcmp(viewSpell->data->name, spellName) != 0) {
+                viewSpell = viewSpell->next;
+            }
+            char* option = strsep(&parsing, " ");
+            uint8_t level=0;
+            if (strcmp (option,"-l") ==0) {
+                level = atoi(strsep(&parsing, " "));
+                if((viewSpell->data->damage->damage_group) == 0){ //damage at character level
+                    printf("This spell can't be casted as a higher level. This spells damage dependants on character level\n");
+                }
+                if (amountOfSpellSlots[level-1]==0){
+                    printf ("A %dth level spell slot is not available. Do you want to use a %dth spell slot?\n", level, level-1);
+                    printf ("The list of available spell slots are:\n");
+                    for (int j=0; j<level; j++) {
+                        printf("* %dst level: %d\n",j+1,amountOfSpellSlots[j]);
+                    }
+                }  else {
+                    printf ("Casting succeeded\n");
+                    sprintf(stringWrite,"used spell %s at level %d\n",viewSpell->data->name,level);
+                    fputs(stringWrite,filePointerHistory);
+                    amountOfSpellSlots[level-1]--;
+                }
+            } else {
+                for (int j=8;j>0;j--) {
+                    if (amountOfSpellSlots[j]!=0){
+                        level = j+1;
+                        break;
+                    }
+                }
+                printf ("Casting succeeded at level %d\n", level);
+                sprintf(stringWrite,"used spell %s at level %d\n",viewSpell->data->name,level);
+                fputs(stringWrite,filePointerHistory);
+                amountOfSpellSlots[level-1]--;
+            }
+        } else {
+            parsing = userInput;
+            printf("user input %s\n",parsing);
+            char* spellName = strsep(&parsing, " ");
+            printf("spell name %s \n",spellName);
+            struct spellNode *viewSpell = spellList;
+            while (viewSpell != NULL && strcmp(viewSpell->data->name, spellName) != 0) {
+                viewSpell = viewSpell->next;
+            }
+            printSpellOption(viewSpell,parsing);
         }
-
+        printf("The following queries are available:\n");
+        printf("View spell list: Returns a list of all the available spells\n");
+        printf("spell-name  [-at attack_type] [-ct casting_time] [-cl classes] [-co components] \n");
+        printf("[-de description] [-du duration] [-r range] ...\n");
+        printf("stop : stops the program\n");
+        fgets(userInput, sizeof(userInput),stdin);
+        userInput[strcspn(userInput, "\n")] = '\0';
     }
+    
     fclose(filePointerHistory);
     freeSpells(spellList);
     return 0;
@@ -825,4 +867,168 @@ void printSpell(struct spellNode* head){
         printf("name : %s\n",(*head).data->subclasses[i].name);
         printf("url : %s\n",head->data->subclasses[i].url);
     }
+}
+
+void printSpellOption(struct spellNode* head, char* optionString){
+    char *options = strsep(&optionString, " ");
+    while (options != 0) {
+        if (strcmp(options, "-at") == 0) {
+            printf("attack type : %s\n", head->data->attack_type);
+        } else if (strcmp(options, "-de") == 0) {
+            printf("description : ");
+            printf("count %d\n", (*head).data->descCounter);
+            for(int i=0;i<(*head).data->descCounter;i++){
+                printf("%s",(*head).data->desc[i]);
+            }
+            printf("\n");
+        } else if (strcmp(options, "-i") == 0) {
+            printf("index : %s\n",head->data->index);
+        } else if (strcmp(options, "-u") == 0) {
+            printf("url : %s\n",head->data->url);
+        } else if (strcmp(options, "-hl") == 0) {
+            printf("higher level: ");
+            if ((*head).data->higher_level != NULL) {
+                printf("count higher level %d\n",(*head).data->higher_levelCounter);
+                for(int i=0;i<(*head).data->higher_levelCounter;i++){
+                    printf("%s",(*head).data->higher_level[i]);
+                }
+            }
+            printf("\n");
+        } else if (strcmp(options, "-r") == 0) {
+            printf("range : %s\n",(*head).data->range);
+        } else if (strcmp(options, "-co") == 0) {
+            printf("components : ");
+            if ((*head).data->components!=NULL){
+                for(int i=0;i<(*head).data->componentsCounter;i++){
+                    switch((*head).data->components[i]){
+                        case 0:
+                            printf("V\n");
+                            break;
+                        case 1:
+                            printf("S\n");
+                            break;
+                        case 2:
+                            printf("M\n");
+                    }
+                }
+            }
+        } else if (strcmp(options, "-ma") == 0) {
+            printf("material : %s\n",(*head).data->material);
+        } else if (strcmp(options, "-ae") == 0) {
+            printf("area of effect : \n");
+            if ((*head).data->area_of_effect!=NULL) {
+                printf("size : %d\n",(*head).data->area_of_effect->size);
+            }
+
+            if ((*head).data->area_of_effect!=NULL) {
+                printf("type : ");
+                switch ((*head).data->area_of_effect->type) {
+                    case 0:
+                        printf("sphere\n");
+                        break;
+                    case 1:
+                        printf("cone\n");
+                        break;
+                    case 2:
+                        printf("cylinder\n");
+                        break;
+                    case 3:
+                        printf("line\n");
+                        break;
+                    case 4:
+                        printf("cube\n");
+                        break;
+                }
+            }
+        } else if (strcmp(options, "-ri") == 0) {
+            printf("ritual : ");
+            switch ((*head).data->ritual) {
+                case 0:
+                    printf("false\n");
+                    break;
+                case 1:
+                    printf("true\n");
+                    break;
+            }
+        } else if (strcmp(options, "-du") == 0) {
+            printf("duration : %s\n",(*head).data->duration);
+        } else if (strcmp(options, "-c") == 0) {
+            printf("concentration : ");
+            switch ((*head).data->concentration) {
+                case 0:
+                    printf("false\n");
+                    break;
+                case 1:
+                    printf("true\n");
+                    break;
+            }
+        } else if (strcmp(options, "-ct") == 0) {
+            printf("casting time : %s\n",(*head).data->casting_time);
+        } else if (strcmp(options, "-l") == 0) {
+            printf("level : %d\n",(*head).data->level);
+        } else if (strcmp(options, "-d") == 0) {
+            if ((*head).data->damage != NULL) {
+                printf("damage at levels : ");
+                switch ((*head).data->damage->damage_group) {
+                    case 0:
+                        printf("damage at character level\n");
+                        break;
+                    case 1:
+                        printf("damage at slot level\n");
+                        break;
+                }
+            }
+
+            if ((*head).data->damage != NULL) {
+                printf("here\n");
+                printf("%d\n", (*head).data->damageKeyValueCounter);
+                for (int i = 0; i < (*head).data->damageKeyValueCounter; i++) {
+                    printf("level %d , %s\n", (*head).data->damage->keyValues[i].level,
+                           (*head).data->damage->keyValues[i].value);
+                }
+            }
+        } else if (strcmp(options, "-dt") == 0) {
+            printf("damage type :\n");
+            printf("index : %s\n",(*head).data->damage_type.index);
+            printf("name : %s\n",(*head).data->damage_type.name);
+            printf("url : %s\n",(*head).data->damage_type.url);
+        } else if (strcmp(options, "-s") == 0) {
+            printf("school : \n");
+            printf("index : %s\n",(*head).data->school.index);
+            printf("name : %s\n",(*head).data->school.name);
+            printf("url : %s\n",(*head).data->school.url);
+        } else if (strcmp(options, "-cl") == 0) {
+            printf("classes : ");
+            for(int i=0;i<(*head).data->classesCounter;i++){
+                printf("class : %d\n",i);
+                printf("index : %s\n",(*head).data->classes[i].index);
+                printf("name : %s\n",(*head).data->classes[i].name);
+                printf("url : %s\n",head->data->classes[i].url);
+            }
+        } else if (strcmp(options, "-sc") == 0) {
+            printf("subclasses : ");
+            for (int i = 0; i < (*head).data->subclassesCounter; i++) {
+                printf("subclass : %d\n", i);
+                printf("index : %s\n", (*head).data->subclasses[i].index);
+                printf("name : %s\n", (*head).data->subclasses[i].name);
+                printf("url : %s\n", head->data->subclasses[i].url);
+            }
+        }
+        options = strsep(&optionString, " ");
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
