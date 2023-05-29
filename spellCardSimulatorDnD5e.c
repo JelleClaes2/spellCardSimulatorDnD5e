@@ -65,7 +65,9 @@ struct spell{
     char* name;
     char* url;
     char** desc;
+    uint8_t descCounter;
     char** higher_level;
+    uint8_t higher_levelCounter;
     char* range;
     uint8_t componentsCounter;
     enum components* components;
@@ -78,6 +80,7 @@ struct spell{
     int level;
     char* attack_type;
     struct damage* damage;
+    uint8_t damageKeyValueCounter;
     struct damage_type damage_type;
     struct resource school;
     uint8_t classesCounter;
@@ -111,7 +114,7 @@ int main(int argc , char* argv[]){
     struct spellNode* spellList = NULL;
     uint8_t characterLevel = 0;
     char* nameHistoryFile;
-    uint8_t amountOfSpellSlots[9]; //highest slot level == 9 and never higher than 9 slots of a certain spell
+    uint8_t amountOfSpellSlots[9] = {0}; //highest slot level == 9 and never higher than 9 slots of a certain spell
     char* fileName;
 
     for(int i=1;i<argc;i++){
@@ -164,8 +167,8 @@ int main(int argc , char* argv[]){
     }
 
     printSpell(spellList);
-    //TODO VICIOUS-MOCKERY DAMAGE WONT PRINT
-/*
+
+
     printf("\n\n");
     char userInput[20];
     char stringWrite[100];
@@ -182,19 +185,35 @@ int main(int argc , char* argv[]){
         printSpell(spellList);
         fputs("cycled in the deck\n",filePointerHistory);
     }else if(strcmp(userInput,"delete")==0 || strcmp(userInput,"Delete")==0 || strcmp(userInput,"DELETE")==0){
-        pop(&spellList);
+        struct spell* deletedSpell = pop(&spellList);
         printSpell(spellList);
-        sprintf(stringWrite,"deleted spell %s from deck\n",spellList->data->name);
+        sprintf(stringWrite,"deleted spell %s from deck\n",deletedSpell->name);
         fputs(stringWrite,filePointerHistory);
-    }else if(strcmp(userInput,"use")==0 || strcmp(userInput,"Use")==0 || strcmp(userInput,"USE")==0){//TODO MAKE IT SO IT IS CAST -L X
-        //TODO MAYBE CAST AS LAST AND THEN FOR LOOP AND CHECK FOR -L OR THE WORD CAST
-        sprintf(stringWrite,"used spell %s as level %d\n",spellList->data->name,castingLevel);
-        fputs(stringWrite,filePointerHistory);
+    }else if(strstr(userInput,"cast")!=0 || strstr(userInput,"Cast")!=0 || strstr(userInput,"CAST")!=0){//TODO MAKE IT SO IT IS CAST -L X
+
+        if((spellList->data->damage->damage_group) == 0){ //damage at character level
+            printf("This spell cant be cast as an higher level. This spells damage dependants on character level\n");
+            //TODO PRINT DAMAGE ROLL DEPENDING ON LEVEL;
+        }else{
+            uint8_t castingLevel = 0;
+            if(strstr(userInput,"-l")!=0 || strstr(userInput,"-L")!=0) {
+                castingLevel = atoi(strstr(userInput,"-l")+3);
+                printf("casting level %d\n",castingLevel);
+                amountOfSpellSlots[castingLevel-1] --;
+                printf("These spell slots are left\n");
+                for(int j=0;j<9;j++){
+                    printf("spell slots level %d = %d\n",j+1,amountOfSpellSlots[j]);
+                }
+            }
+            sprintf(stringWrite,"used spell %s as level %d\n",spellList->data->name,castingLevel);
+            fputs(stringWrite,filePointerHistory);
+            //TODO CHECK IF IT IS POSSIBLE TO CAST ON THIS LEVEL
+        }
+
     }
     fclose(filePointerHistory);
     freeSpells(spellList);
     return 0;
-    */
 
 
 }
@@ -205,7 +224,7 @@ uint8_t parseArray (FILE* filePointer, char*** element) {
     char *string;
     char *token;
 
-    (*element) = (char **) calloc(1,sizeof(char**)); // only allocate 1 char pointer place
+    (*element) = (char **) calloc(1,sizeof(char*)); // only allocate 1 char pointer place
     fgets(buffer, sizeof(buffer), filePointer);
     parsing=buffer;
     uint8_t count=0;
@@ -218,7 +237,7 @@ uint8_t parseArray (FILE* filePointer, char*** element) {
         string = (char *) calloc(strlen(token) + 1, sizeof(char));
         strcpy(string, token);
         if (count != 1) {
-            (*element) = (char **) realloc(*element, count * sizeof(char **)); // add one more entry
+            (*element) = (char **) realloc(*element, count * sizeof(char *)); // add one more entry
         }
         (*element)[count-1] = string;
         fgets(buffer, sizeof(buffer), filePointer);
@@ -232,7 +251,7 @@ uint8_t parseEnumComponentsArray (FILE* filePointer, enum components** element) 
     char *parsing = NULL; // Prepare helper pointer for strsep
     char *token;
 
-    (*element) = (enum components *) calloc(1,sizeof(enum components*)); // only allocate 1 char pointer place
+    (*element) = (enum components *) calloc(1,sizeof(enum components)); // only allocate 1 char pointer place
     fgets(buffer, sizeof(buffer), filePointer);
     parsing=buffer;
     uint8_t count=0;
@@ -244,7 +263,7 @@ uint8_t parseEnumComponentsArray (FILE* filePointer, enum components** element) 
         printf("comp token %s\n",token);
 
         if (count != 1) {
-            (*element) = (enum components *) realloc(*element, count * sizeof(enum components *)); // add one more entry
+            (*element) = (enum components *) realloc(*element, count * sizeof(enum components )); // add one more entry
         }
         if(strcmp(token, "V")==0){
             (*element)[count-1] = V;
@@ -314,6 +333,7 @@ uint8_t parseAnyKeyArray (FILE* filePointer, struct anyKey** anyKey) {
         printf ("step 4\n");
         strsep(&parsing, "\"");
         token = strsep(&parsing, "\"");
+        printf("token %s\n",token);
         (*anyKey)[count-1].value = (char *) calloc(strlen(token) + 1, sizeof(char));
         strcpy((*anyKey)[count-1].value, token);
         printf ("step 5\n");
@@ -402,16 +422,16 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                     spell->url = string;
                     printf("url = %s\n", spell->url);
                 } else if (strcmp("desc", token) == 0) {
-                    uint8_t count = parseArray(filePointer, &(spell->desc));
-                    printf("size %d\n", count);
-                    for (int i = 0; i < count; i++) {
+                    spell->descCounter = parseArray(filePointer, &(spell->desc));
+                    printf("size %d\n", spell->descCounter);
+                    for (int i = 0; i < spell->descCounter; i++) {
                         printf("desc[%d] =%s\n", i, spell->desc[i]);
                     }
                 } else if (strcmp("higher_level", token) == 0) {
                     if(strchr(parsing,']')==NULL){
-                        uint8_t count = parseArray(filePointer, &(spell->higher_level));
-                        printf("size %d\n", count);
-                        for (int i = 0; i < count; i++) {
+                        spell->higher_levelCounter = parseArray(filePointer, &(spell->higher_level));
+                        printf("size %d\n",spell->higher_levelCounter);
+                        for (int i = 0; i < spell->higher_levelCounter; i++) {
                             printf("higher lvl[%d] =%s\n", i, spell->higher_level[i]);
                         }
                     }
@@ -423,9 +443,9 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                     spell->range = string;
                     printf("range =%s\n", spell->range);
                 } else if (strcmp("components", token) == 0) {
-                    uint8_t count = parseEnumComponentsArray(filePointer, &(spell->components));
-                    printf("size %d\n", count);
-                    for (int i = 0; i < count; i++) {
+                    spell->componentsCounter = parseEnumComponentsArray(filePointer, &(spell->components));
+                    printf("size %d\n", spell->componentsCounter);
+                    for (int i = 0; i < spell->componentsCounter; i++) {
                         printf("components[%d] =%d\n", i, spell->components[i]);
                     }
                 } else if (strcmp("material", token) == 0) {
@@ -436,7 +456,7 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                     spell->material = string;
                     printf("material =%s\n", spell->material);
                 } else if (strcmp("area_of_effect", token) == 0) {
-                    spell->area_of_effect = (struct area_of_effect*) calloc(1,sizeof(struct area_of_effect*));
+                    spell->area_of_effect = (struct area_of_effect*) calloc(1,sizeof(struct area_of_effect));
                     for (int i = 0; i < 2; i++) {
                         fgets(buffer, sizeof(buffer), filePointer);
                         parsing = buffer;
@@ -511,28 +531,26 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                     spell->attack_type = string;
                     printf("attack_type =%s\n", spell->attack_type);
                 } else if (strcmp("damage", token) == 0) {
-                    spell->damage = (struct damage*) calloc(1,sizeof(struct damage*));
+                    spell->damage = (struct damage*) calloc(1,sizeof(struct damage));
                     fgets(buffer, sizeof(buffer), filePointer);
                     while (strchr(buffer, '}') == NULL) {
                         parsing = buffer; // Point to buffer (reset)
                         strsep(&parsing, "\"");
                         token = strsep(&parsing, "\"");
                         if (strcmp("damage_at_character_level", token) == 0) {
-                            damageGroup = damage_at_character_level;
-                            printf("test 1\n");
-                            uint8_t count = parseAnyKeyArray(filePointer, &(spell->damage->keyValues));
-                            printf("test 2\n");
-                            printf("size %d\n", count);
-                            for (int i = 0; i < count; i++) {
+                            spell->damage->damage_group = damage_at_character_level;
+                            spell->damageKeyValueCounter = parseAnyKeyArray(filePointer, &(spell->damage->keyValues));
+                            printf("size %d\n", spell->damageKeyValueCounter);
+                            for (int i = 0; i < spell->damageKeyValueCounter; i++) {
                                 printf("key val [%d] =%d , %s\n", i, spell->damage->keyValues[i].level,
                                        spell->damage->keyValues[i].value);
                             }
                             fgets(buffer, sizeof(buffer), filePointer);
                         } else if (strcmp("damage_at_slot_level", token) == 0) {
-                            damageGroup = damage_at_slot_level;
-                            uint8_t count = parseAnyKeyArray(filePointer, &(spell->damage->keyValues));
-                            printf("size %d\n", count);
-                            for (int i = 0; i < count; i++) {
+                            spell->damage->damage_group = damage_at_slot_level;
+                            spell->damageKeyValueCounter = parseAnyKeyArray(filePointer, &(spell->damage->keyValues));
+                            printf("size %d\n", spell->damageKeyValueCounter);
+                            for (int i = 0; i < spell->damageKeyValueCounter; i++) {
                                 printf("key val [%d] =%d , %s\n", i, spell->damage->keyValues[i].level,
                                        spell->damage->keyValues[i].value);
                             }
@@ -555,11 +573,9 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                     printf("school index =%s\n", spell->school.index);
                 } else if (strcmp("classes", token) == 0) {
                     printf("classes\n");
-                    uint8_t amountOfClasses = 0;
-                    amountOfClasses = parseNameUrlIndexArray(filePointer, &(spell->classes));
-                    spell->classesCounter =amountOfClasses;
-                    printf("amount of classes = %d\n", amountOfClasses);
-                    for (int i = 0; i < amountOfClasses; i++) {
+                    spell->classesCounter = parseNameUrlIndexArray(filePointer, &(spell->classes));
+                    printf("amount of classes = %d\n", spell->classesCounter);
+                    for (int i = 0; i < spell->classesCounter; i++) {
                         printf("class[%d] name =%s\n", i, spell->classes[i].name);
                         printf("class url[%d] =%s\n", i, spell->classes[i].url);
                         printf("class index[%d] =%s\n", i, spell->classes[i].index);
@@ -567,11 +583,9 @@ void jsonParser(FILE* filePointer, struct spell* spell) {
                 } else if (strcmp("subclasses", token) == 0) {
                     printf("parsing = %s\n",parsing);
                     if(strchr(parsing,']')==NULL){
-                        uint8_t amountOfSubclasses = 0;
-                        amountOfSubclasses = parseNameUrlIndexArray(filePointer, &(spell->subclasses));
-                        spell->subclassesCounter = amountOfSubclasses;
-                        printf("amount of subclasses = %d\n", amountOfSubclasses);
-                        for (int i = 0; i < amountOfSubclasses; i++) {
+                        spell->subclassesCounter = parseNameUrlIndexArray(filePointer, &(spell->subclasses));
+                        printf("amount of subclasses = %d\n", spell->subclassesCounter);
+                        for (int i = 0; i < spell->subclassesCounter; i++) {
                             printf("class[%d] name =%s\n", i, spell->subclasses[i].name);
                             printf("class url[%d] =%s\n", i, spell->subclasses[i].url);
                             printf("class index[%d] =%s\n", i, spell->subclasses[i].index);
@@ -672,16 +686,17 @@ void printSpell(struct spellNode* head){
     printf("url : %s\n",(*head).data->url);
 
     printf("description : ");
-    count = sizeof((*head).data->desc)/ sizeof(char **);
-    for(int i=0;i<count;i++){
+
+    printf("count %d\n", (*head).data->descCounter);
+    for(int i=0;i<(*head).data->descCounter;i++){
         printf("%s",(*head).data->desc[i]);
     }
     printf("\n");
 
     printf("higher level: ");
     if ((*head).data->higher_level != NULL) {
-        count = sizeof((*head).data->higher_level)/ sizeof(char **);
-        for(int i=0;i<count;i++){
+        printf("count higher level %d\n",(*head).data->higher_levelCounter);
+        for(int i=0;i<(*head).data->higher_levelCounter;i++){
             printf("%s",(*head).data->higher_level[i]);
         }
     }
@@ -691,8 +706,7 @@ void printSpell(struct spellNode* head){
 
     printf("components : ");
     if ((*head).data->components!=NULL){
-        count = sizeof((*head).data->components)/ sizeof(enum components*);
-        for(int i=0;i<count;i++){
+        for(int i=0;i<(*head).data->componentsCounter;i++){
             switch((*head).data->components[i]){
                 case 0:
                     printf("V\n");
@@ -777,10 +791,11 @@ void printSpell(struct spellNode* head){
         }
     }
 
-    if ((*head).data->damage!=NULL){
-        count = sizeof((*head).data->damage->keyValues)/ sizeof(struct anyKey);
-        for(int i=0; i<count;i++){
-            printf("amount of damage %s\n",(*head).data->damage->keyValues->value);
+    if ((*head).data->damage!=NULL) {
+        printf ("here\n");
+        printf("%d\n",(*head).data->damageKeyValueCounter);
+        for(int i=0; i<(*head).data->damageKeyValueCounter;i++){
+            printf("level %d , %s\n", (*head).data->damage->keyValues[i].level, (*head).data->damage->keyValues[i].value);
         }
     }
 
