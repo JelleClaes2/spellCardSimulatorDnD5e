@@ -1,4 +1,4 @@
-# Points 11/15
+# Points 15/15
 
 ## checklist for the points
 
