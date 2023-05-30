@@ -5,7 +5,7 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#define MAX_LIST_SIZE (100)
+//#define MAX_LIST_SIZE (100)
 
 char *strsep(char **stringp, const char *delim) {
     char *rv = *stringp;
@@ -118,6 +118,7 @@ int main(int argc , char* argv[]){
     char* nameHistoryFile;
     uint8_t amountOfSpellSlots[9] = {0}; //highest slot level == 9 and never higher than 9 slots of a certain spell
     char* fileName;
+    uint8_t writeLogFile =0;
 
     for(int i=1;i<argc;i++){
         if(argv[i][0] == '-'){
@@ -136,6 +137,7 @@ int main(int argc , char* argv[]){
                 i++;
             } else if(argv[i][1] == 'h'){
                 nameHistoryFile = argv[i+1];
+                writeLogFile = 1;
                 i++;
             }
         } else{
@@ -158,7 +160,7 @@ int main(int argc , char* argv[]){
     }
 
     FILE* filePointerHistory = NULL;
-    if(nameHistoryFile != NULL){
+    if(writeLogFile == 1){
         filePointerHistory = fopen(nameHistoryFile,"w");
         if(filePointerHistory == NULL){
             perror("File opening failed");
