@@ -157,11 +157,15 @@ int main(int argc , char* argv[]){
         }
     }
 
-    FILE* filePointerHistory = fopen(nameHistoryFile,"w");
-    if(filePointerHistory == NULL){
-        perror("File opening failed");
-        return -1;
+    FILE* filePointerHistory = NULL;
+    if(nameHistoryFile != NULL){
+        filePointerHistory = fopen(nameHistoryFile,"w");
+        if(filePointerHistory == NULL){
+            perror("File opening failed");
+            return -1;
+        }
     }
+
 
     //printSpell(spellList);
     char userInput[100];
@@ -173,6 +177,7 @@ int main(int argc , char* argv[]){
     printf("View spell list: Returns a list of all the available spells\n");
     printf("spell-name  [-at attack_type] [-ct casting_time] [-cl classes] [-co components] \n");
     printf("[-de description] [-du duration] [-r range] ...\n");
+    printf("To cast : cast spell-name [-l wanted casting level]\n");
     printf("stop : stops the program\n");
     fgets(userInput, sizeof(userInput),stdin);
     userInput[strcspn(userInput, "\n")] = '\0';
@@ -220,7 +225,9 @@ int main(int argc , char* argv[]){
 
                     printf ("Casting succeeded at level %d\n", level);
                     sprintf(stringWrite,"used spell %s at level %d\n",viewSpell->data->name,level);
-                    fputs(stringWrite,filePointerHistory);
+                    if(filePointerHistory != NULL) {
+                        fputs(stringWrite, filePointerHistory);
+                    }
                     amountOfSpellSlots[level-1]--;
                 }
             } else {
@@ -238,7 +245,9 @@ int main(int argc , char* argv[]){
 
                 printf ("Casting succeeded at level %d\n", level);
                 sprintf(stringWrite,"used spell %s at level %d\n",viewSpell->data->name,level);
-                fputs(stringWrite,filePointerHistory);
+                if(filePointerHistory != NULL){
+                    fputs(stringWrite,filePointerHistory);
+                }
                 amountOfSpellSlots[level-1]--;
             }
         } else {
@@ -254,6 +263,7 @@ int main(int argc , char* argv[]){
         printf("View spell list: Returns a list of all the available spells\n");
         printf("spell-name  [-at attack_type] [-ct casting_time] [-cl classes] [-co components] \n");
         printf("[-de description] [-du duration] [-r range] ...\n");
+        printf("To cast : cast spell-name [-l wanted casting level]\n");
         printf("stop : stops the program\n");
         fgets(userInput, sizeof(userInput),stdin);
         userInput[strcspn(userInput, "\n")] = '\0';
