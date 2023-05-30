@@ -170,6 +170,7 @@ int main(int argc , char* argv[]){
 
 
     //printSpell(spellList);
+
     char userInput[100];
     char stringWrite[100];
     uint8_t castingLevel =0;
@@ -1045,7 +1046,6 @@ void printSpellOption(struct spellNode* head, char* optionString){
             }
 
             if ((*head).data->damage != NULL) {
-                printf("here\n");
                 printf("%d\n", (*head).data->damageKeyValueCounter);
                 for (int i = 0; i < (*head).data->damageKeyValueCounter; i++) {
                     printf("level %d , %s\n", (*head).data->damage->keyValues[i].level,
